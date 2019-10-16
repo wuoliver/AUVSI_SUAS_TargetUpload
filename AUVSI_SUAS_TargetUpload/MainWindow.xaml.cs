@@ -127,6 +127,13 @@ namespace AUVSI_SUAS_TargetUpload
             [JsonConverter(typeof(StringEnumConverter))]
             private Color shapeColor;
 
+            [JsonProperty("alphanumeric_color")]
+            [JsonConverter(typeof(StringEnumConverter))]
+            private Color alphanumeric_color;
+
+            [JsonProperty("description")]
+            private string description;
+
             [JsonProperty("autonomous")]
             private bool autonomous;
 
