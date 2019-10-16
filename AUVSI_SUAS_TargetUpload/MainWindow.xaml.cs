@@ -42,17 +42,16 @@ namespace AUVSI_SUAS_TargetUpload
             gHttpClient.Timeout = new TimeSpan(0, 0, 10);
             gLoggedIn = false;
 
-            ODLC test = new ODLC();
-            string i = test.getJson();
+            Login();
+            List<ODLC> temp = getOLDC();
+            ODLC temp2 = getOLDC(1);
         }
-
-        public Exception Ex { get; private set; }
 
         /// <summary>
         /// Function to log into the interop server using the supplied username and password.
         /// The HttpClient stores the cookie given by the server to use for future communication.
         /// </summary>
-        private async void Login()
+        private void Login()
         {
             //Set base address of the httpclient in case it was changed. 
             gHttpClient.BaseAddress = new Uri(Properties.Settings.Default.url);
@@ -60,7 +59,7 @@ namespace AUVSI_SUAS_TargetUpload
             StringContent content = new StringContent(login, Encoding.UTF8, "application/json");
             try
             {
-                HttpResponseMessage response = await gHttpClient.PostAsync("/api/login", content);
+                HttpResponseMessage response = gHttpClient.PostAsync("/api/login", content).Result;
                 if (response.StatusCode == HttpStatusCode.OK)
                 {
                     gLoggedIn = true;
@@ -98,54 +97,342 @@ namespace AUVSI_SUAS_TargetUpload
         }
 
         /// <summary>
+        /// Uploads a new ODLC object to the server. Returns the uploaded object. 
+        /// </summary>
+        /// <param name="odlcObject"></param>
+        /// <returns></returns>
+        private ODLC postODLC(ODLC odlcObject)
+        {
+            if (!gLoggedIn)
+            {
+                return null;
+            }
+            //If the ID is set, then we have already uploaded this object 
+            if (odlcObject.ID != null)
+            {
+                return null;
+            }
+            ODLC odlcResponse = null;
+            try
+            {
+                StringContent content = new StringContent(odlcObject.getJson(), Encoding.UTF8, "application/json");
+                HttpResponseMessage response = gHttpClient.PostAsync("/api/odlcs", content).Result;
+                if (response.StatusCode == HttpStatusCode.OK)
+                {
+                    odlcResponse = JsonConvert.DeserializeObject<ODLC>(response.Content.ReadAsStringAsync().Result);
+                }
+                else
+                {
+                    //Response code was not "ok"
+                    MessageBox.Show("Error: " + response.StatusCode.ToString(), "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            catch (Exception Ex)
+            {
+                //Log something
+                return null;
+            }
+
+            return odlcResponse;
+        }
+        
+        
+        /// <summary>
+        /// Updates the uploaded ODLC object on the server. Returns the updated object. 
+        /// </summary>
+        /// <param name="odlcObject"></param>
+        /// <returns></returns>
+        private ODLC updateODLC(ODLC odlcObject)
+        {
+            if (!gLoggedIn)
+            {
+                return null;
+            }
+            //If the ID is not set, then the object has not been uploaded yet. 
+            if (odlcObject.ID == null)
+            {
+                return null;
+            }
+            ODLC odlcResponse = null;
+            string id = odlcObject.ID.ToString();
+            try
+            {
+                StringContent content = new StringContent(odlcObject.getJson(), Encoding.UTF8, "application/json");
+                HttpResponseMessage response = gHttpClient.PutAsync("/api/odlcs/" + id, content).Result;
+                if (response.StatusCode == HttpStatusCode.OK)
+                {
+                    odlcResponse = JsonConvert.DeserializeObject<ODLC>(response.Content.ReadAsStringAsync().Result);
+                }
+                else
+                {
+                    //Response code was not "ok"
+                    MessageBox.Show("Error: " + response.StatusCode.ToString(), "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            catch (Exception Ex)
+            {
+                //Log something
+                return null;
+            }
+
+            return odlcResponse;
+        }
+
+        //Delete Function 
+        //Not mentioned in the interop program specs, but it does work. 
+        //gHttpClient.DeleteAsync("/api/odlcs" + id.ToString())
+
+        /// <summary>
+        /// Gets a list of ODLC targets uploaded to the server. Returns NULL from any server errors. 
+        /// </summary>
+        /// <returns></returns>
+        private List<ODLC> getOLDC()
+        {
+            if (!gLoggedIn)
+            {
+                return null;
+            }
+            List<ODLC> odlcList = null;
+            try
+            {
+                HttpResponseMessage response = gHttpClient.GetAsync("/api/odlcs").Result;
+                if (response.StatusCode == HttpStatusCode.OK)
+                {
+                    odlcList = JsonConvert.DeserializeObject<List<ODLC>>(response.Content.ReadAsStringAsync().Result);
+                }
+                else
+                {
+                    //Response code was not "ok"
+                    MessageBox.Show("Error: " + response.StatusCode.ToString(), "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            catch (Exception Ex)
+            {
+                //Log something
+                return null;
+            }
+
+            return odlcList;
+        }
+
+        /// <summary>
+        /// Gets a single ODLC object uploaded from the server. Returns NULL if id is invalid. 
+        /// </summary>
+        /// <returns>
+        /// A single ODLC object with the given id. Returns NULL if id is invalid. 
+        /// </returns>
+        private ODLC getOLDC(int id)
+        {
+            if (!gLoggedIn)
+            {
+                return null;
+            }
+            ODLC odlcObject = null;
+            try
+            {
+                HttpResponseMessage response = gHttpClient.GetAsync("/api/odlcs/" + id.ToString()).Result;
+                if (response.StatusCode == HttpStatusCode.OK)
+                {
+                    odlcObject = JsonConvert.DeserializeObject<ODLC>(response.Content.ReadAsStringAsync().Result);
+                }
+                else
+                {
+                    //Response code was not "ok"
+                    MessageBox.Show("Error: " + response.StatusCode.ToString(), "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            catch (Exception Ex)
+            {
+                //Log something
+                return null;
+            }
+
+            return odlcObject;
+        }
+
+        /// <summary>
         /// Class that holds the OLDC object. 
         /// </summary>
         private class ODLC
         {
+            //We cannot send an id when uploading a new object. We only set ID when updating the object. 
+            [JsonProperty("mission", NullValueHandling = NullValueHandling.Ignore)]
+            private int? id;
+
+            public int? ID { get; }
+
             [JsonProperty("mission")]
             private int mission;
 
+            /// <summary>
+            /// The mission that the OLDC belongs to. 
+            /// </summary>
+            public int Mission
+            {
+                get
+                {
+                    return mission;
+                }
+                set
+                {
+                    mission = value;
+                }
+            }
+
             [JsonProperty("type")]
             [JsonConverter(typeof(StringEnumConverter))]
-            private Type type;
+            private ODLCType type;
+
+            public ODLCType Type
+            {
+                get
+                {
+                    return type;
+                }
+                set
+                {
+                    type = value;
+                }
+            }
 
             [JsonProperty("latitude")]
             private double latitude;
 
+            public double Latitude
+            {
+                get
+                {
+                    return latitude;
+                }
+                set
+                {
+                    latitude = value;
+                }
+            }
+
+            
+
             [JsonProperty("longitude")]
             private double longitude;
 
+            public double Longitude
+            {
+                get
+                {
+                    return longitude;
+                }
+                set
+                {
+                    longitude = value;
+                }
+            }
+
             [JsonProperty("orientation")]
             [JsonConverter(typeof(StringEnumConverter))]
-            private Orientation orientation;
+            private ODLCOrientation orientation;
+
+            public ODLCOrientation Orientation
+            {
+                get
+                {
+                    return orientation;
+                }
+                set
+                {
+                    orientation = value;
+                }
+            }
 
             [JsonProperty("shape")]
             [JsonConverter(typeof(StringEnumConverter))]
-            private Shape shape;
+            private ODLCShape shape;
+
+            public ODLCShape Shape
+            {
+                get
+                {
+                    return shape;
+                }
+                set
+                {
+                    shape = value;
+                }
+            }
 
             [JsonProperty("shapeColor")]
             [JsonConverter(typeof(StringEnumConverter))]
-            private Color shapeColor;
+            private ODLCColor shapeColor;
+
+            public ODLCColor ShapeColor
+            {
+                get
+                {
+                    return shapeColor;
+                }
+                set
+                {
+                    shapeColor = value;
+                }
+            }
 
             [JsonProperty("alphanumeric_color")]
             [JsonConverter(typeof(StringEnumConverter))]
-            private Color alphanumeric_color;
+            private ODLCColor alphanumericColor;
+
+            public ODLCColor AlphanumericColor
+            {
+                get
+                {
+                    return alphanumericColor;
+                }
+                set
+                {
+                    alphanumericColor = value;
+                }
+            }
 
             [JsonProperty("description")]
             private string description;
 
+            public string Description
+            {
+                get
+                {
+                    return description;
+                }
+                set
+                {
+                    description = value;
+                }
+            }
+
             [JsonProperty("autonomous")]
             private bool autonomous;
 
+            public bool Autonomous
+            {
+                get
+                {
+                    return autonomous;
+                }
+                set
+                {
+                    autonomous = value;
+                }
+            }
+
             public ODLC()
             {
+                id = null;
                 mission = 1;
-                type = Type.STANDARD;
+                type = ODLCType.STANDARD;
                 latitude = 0;
                 longitude = 0;
-                orientation = Orientation.N;
-                shape = Shape.CIRCLE;
-                shapeColor = Color.BLACK;
+                orientation = ODLCOrientation.N;
+                shape = ODLCShape.CIRCLE;
+                shapeColor = ODLCColor.BLACK;
+                alphanumericColor = ODLCColor.BLACK;
+                description = "";
                 autonomous = false;
             }
 
@@ -154,7 +441,7 @@ namespace AUVSI_SUAS_TargetUpload
                 return JsonConvert.SerializeObject(this, new Newtonsoft.Json.Converters.StringEnumConverter());
             }
 
-            enum Type
+            public enum ODLCType
             {
                 // Standard ODLCs take latitude, longitude, orientation, shape and
                 // color, alphanumeric and color, and if processed autonomously.
@@ -165,14 +452,14 @@ namespace AUVSI_SUAS_TargetUpload
                 EMERGENT
             }
 
-            enum Shape
+            public enum ODLCShape
             {
                 CIRCLE,
                 SEMICIRCLE,
                 QUARTER_CIRCLE,
                 TRIANGLE,
                 SQUARE,
-                RECTANGLE ,
+                RECTANGLE,
                 TRAPEZOID,
                 PENTAGON,
                 HEXAGON,
@@ -182,7 +469,7 @@ namespace AUVSI_SUAS_TargetUpload
                 CROSS
             }
 
-            enum Color
+            public enum ODLCColor
             {
                 WHITE,
                 BLACK,
@@ -196,7 +483,7 @@ namespace AUVSI_SUAS_TargetUpload
                 ORANGE
             }
 
-            enum Orientation
+            public enum ODLCOrientation
             {
                 N,
                 NE,

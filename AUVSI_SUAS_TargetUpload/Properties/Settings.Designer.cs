@@ -25,7 +25,7 @@ namespace AUVSI_SUAS_TargetUpload.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("testuserr")]
+        [global::System.Configuration.DefaultSettingValueAttribute("testuser")]
         public string username {
             get {
                 return ((string)(this["username"]));
