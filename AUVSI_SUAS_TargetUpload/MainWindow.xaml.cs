@@ -1,4 +1,5 @@
-﻿using System;
+﻿
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,6 +9,7 @@ using System.Net;
 using System.Net.Http;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+using System.Drawing;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
@@ -16,6 +18,10 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.IO;
+using System.Runtime.CompilerServices;
 
 namespace AUVSI_SUAS_TargetUpload
 {
@@ -33,6 +39,9 @@ namespace AUVSI_SUAS_TargetUpload
         private readonly HttpClient gHttpClient;
         private bool gLoggedIn;
 
+        //Stores all the ODLC data
+        private ObservableCollection<ODLC> odlcList;
+
         public MainWindow()
         {
             InitializeComponent();
@@ -42,9 +51,26 @@ namespace AUVSI_SUAS_TargetUpload
             gHttpClient.Timeout = new TimeSpan(0, 0, 10);
             gLoggedIn = false;
 
-            Login();
-            List<ODLC> temp = getOLDC();
-            ODLC temp2 = getOLDC(1);
+            //Initialize new odlcList object 
+            odlcList = new ObservableCollection<ODLC>();
+            odlcList.Add(new ODLC());
+            odlcList.Add(new ODLC());
+            odlcList.Add(new ODLC());
+            odlcList.Add(new ODLC());
+            odlcList.Add(new ODLC());
+
+            //Set datasource for the listbox
+            Listbox_ODLC.ItemsSource = odlcList;
+
+            //Set itemsource for the comboboxes in the UI
+            Combobox_Orientation.ItemsSource = Enum.GetValues(typeof(ODLC.ODLCOrientation));
+            Combobox_Shape.ItemsSource = Enum.GetValues(typeof(ODLC.ODLCShape));
+            Combobox_ShapeColour.ItemsSource = Enum.GetValues(typeof(ODLC.ODLCColor));
+            Combobox_AlphanumericColour.ItemsSource = Enum.GetValues(typeof(ODLC.ODLCColor));
+
+            //Login();
+            //List<ODLC> temp = getOLDC();
+            //ODLC temp2 = getOLDC(1);
         }
 
         /// <summary>
@@ -250,11 +276,20 @@ namespace AUVSI_SUAS_TargetUpload
             return odlcObject;
         }
 
+
+
         /// <summary>
         /// Class that holds the OLDC object. 
         /// </summary>
-        private class ODLC
+        private class ODLC : INotifyPropertyChanged
         {
+            public event PropertyChangedEventHandler PropertyChanged;
+
+            private void NotifyPropertyChanged([CallerMemberName] String propertyName = "")
+            {
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            }
+
             //We cannot send an id when uploading a new object. We only set ID when updating the object. 
             [JsonProperty("mission", NullValueHandling = NullValueHandling.Ignore)]
             private int? id;
@@ -275,7 +310,11 @@ namespace AUVSI_SUAS_TargetUpload
                 }
                 set
                 {
-                    mission = value;
+                    if (value != mission)
+                    {
+                        mission = value;
+                        NotifyPropertyChanged();
+                    }
                 }
             }
 
@@ -291,7 +330,11 @@ namespace AUVSI_SUAS_TargetUpload
                 }
                 set
                 {
-                    type = value;
+                    if (value != type)
+                    {
+                        type = value;
+                        NotifyPropertyChanged();
+                    }
                 }
             }
 
@@ -306,7 +349,11 @@ namespace AUVSI_SUAS_TargetUpload
                 }
                 set
                 {
-                    latitude = value;
+                    if (value != latitude)
+                    {
+                        latitude = value;
+                        NotifyPropertyChanged();
+                    }
                 }
             }
 
@@ -323,7 +370,11 @@ namespace AUVSI_SUAS_TargetUpload
                 }
                 set
                 {
-                    longitude = value;
+                    if (value != longitude)
+                    {
+                        longitude = value;
+                        NotifyPropertyChanged();
+                    }
                 }
             }
 
@@ -339,7 +390,11 @@ namespace AUVSI_SUAS_TargetUpload
                 }
                 set
                 {
-                    orientation = value;
+                    if (value != orientation)
+                    {
+                        orientation = value;
+                        NotifyPropertyChanged();
+                    }
                 }
             }
 
@@ -355,7 +410,11 @@ namespace AUVSI_SUAS_TargetUpload
                 }
                 set
                 {
-                    shape = value;
+                    if (value != shape)
+                    {
+                        shape = value;
+                        NotifyPropertyChanged();
+                    }
                 }
             }
 
@@ -371,9 +430,33 @@ namespace AUVSI_SUAS_TargetUpload
                 }
                 set
                 {
-                    shapeColor = value;
+                    if (value != shapeColor)
+                    {
+                        shapeColor = value;
+                        NotifyPropertyChanged();
+                    }
                 }
             }
+
+            [JsonProperty("alphanumeric")]
+            private string alphanumeric;
+
+            public string Alphanumeric
+            {
+                get
+                {
+                    return alphanumeric;
+                }
+                set
+                {
+                    if (value != alphanumeric)
+                    {
+                        alphanumeric = value;
+                        NotifyPropertyChanged();
+                    }
+                }
+            }
+
 
             [JsonProperty("alphanumeric_color")]
             [JsonConverter(typeof(StringEnumConverter))]
@@ -387,7 +470,11 @@ namespace AUVSI_SUAS_TargetUpload
                 }
                 set
                 {
-                    alphanumericColor = value;
+                    if (value != alphanumericColor)
+                    {
+                        alphanumericColor = value;
+                        NotifyPropertyChanged();
+                    }
                 }
             }
 
@@ -402,7 +489,11 @@ namespace AUVSI_SUAS_TargetUpload
                 }
                 set
                 {
-                    description = value;
+                    if (value != description)
+                    {
+                        description = value;
+                        NotifyPropertyChanged();
+                    }
                 }
             }
 
@@ -417,9 +508,74 @@ namespace AUVSI_SUAS_TargetUpload
                 }
                 set
                 {
-                    autonomous = value;
+                    if (value != autonomous)
+                    {
+                        autonomous = value;
+                        NotifyPropertyChanged();
+                    }
                 }
             }
+
+            private Bitmap targetImage;
+
+            public Bitmap TargetImage
+            {
+                get
+                {
+                    return targetImage;
+                }
+                set
+                {
+                    if (value != targetImage)
+                    {
+                        targetImage = value;
+                        NotifyPropertyChanged();
+                    }
+                }
+            }
+
+            private Bitmap thumbnailImage;
+
+            public Bitmap ThumbnailImage
+            {
+                get
+                {
+                    return thumbnailImage;
+                }
+                set
+                {
+                    if(value != thumbnailImage)
+                    {
+                        thumbnailImage = value;
+                        NotifyPropertyChanged();
+                    }
+                }
+            }
+
+            
+            //Returns a BitmapImage to be displayed on the UI. 
+            public BitmapImage ThumbnailImage_BitmapImage
+            {
+                get
+                {
+                    //Databelow copied from  https://stackoverflow.com/questions/22499407/how-to-display-a-bitmap-in-a-wpf-image
+                    using (MemoryStream memory = new MemoryStream())
+                    {
+                        thumbnailImage.Save(memory, System.Drawing.Imaging.ImageFormat.Bmp);
+                        memory.Position = 0;
+                        BitmapImage bitmapimage = new BitmapImage();
+                        bitmapimage.BeginInit();
+                        bitmapimage.StreamSource = memory;
+                        bitmapimage.CacheOption = BitmapCacheOption.OnLoad;
+                        bitmapimage.EndInit();
+
+                        return bitmapimage;
+                    }
+                }
+            }
+
+            //Object for testing 
+            public string objecttype { get; set; }
 
             public ODLC()
             {
@@ -430,10 +586,14 @@ namespace AUVSI_SUAS_TargetUpload
                 longitude = 0;
                 orientation = ODLCOrientation.N;
                 shape = ODLCShape.CIRCLE;
-                shapeColor = ODLCColor.BLACK;
-                alphanumericColor = ODLCColor.BLACK;
+                shapeColor = ODLCColor.BLUE;
+                alphanumeric = "A";
+                alphanumericColor = ODLCColor.BLUE;
                 description = "";
                 autonomous = false;
+                thumbnailImage = new Bitmap(Properties.Resources.PlaceholderImage);
+                targetImage = new Bitmap(Properties.Resources.PlaceholderImage);
+                objecttype = "TESTVALUE";
             }
 
             public string getJson()
@@ -496,5 +656,21 @@ namespace AUVSI_SUAS_TargetUpload
             }
         }
 
+        private void Listbox_ODLC_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            //Set the UI elements according to the type of target: Standard or Emergent
+            ODLC item = (ODLC)(sender as ListBox).SelectedItem;
+            switch (item.Type)
+            {
+                case ODLC.ODLCType.STANDARD:
+                    //Textbox_Latitude.SetBinding(item.Latitude);
+                    //Textbox_Longitude.DataContext = item.Longitude;
+                    break;
+                case ODLC.ODLCType.EMERGENT:
+                    break;
+                default:
+                    throw new NotImplementedException();
+            }
+        }
     }
 }

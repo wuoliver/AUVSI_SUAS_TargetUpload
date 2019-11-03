@@ -5,8 +5,99 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:AUVSI_SUAS_TargetUpload"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="AUVSI SUAS Target Upload Program" Height="450" Width="800">
     <Grid>
-        
+        <DockPanel LastChildFill="True">
+            <!--Menu Bar-->
+            <Menu DockPanel.Dock="Top" Height="20">
+                <MenuItem Header="_File"/>
+                <MenuItem Header="_Settings"/>
+                <MenuItem Header="_Import"/>
+            </Menu>
+            <!-- ListBox for selecting targets-->
+            <DockPanel DockPanel.Dock="Left"  Margin="10" >
+                <Border DockPanel.Dock="Top" BorderBrush="#FFABADB3" BorderThickness="1"> 
+                    <Grid Height="30" >
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Label Content="Image" Grid.Column="0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+                        <Label Content="Target Type" Grid.Column="1" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+                    </Grid>
+                </Border>
+                
+                <Grid Height="30" DockPanel.Dock="Bottom">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Button Content="Add" Grid.Column="0" Margin="0,5,5,5"/>
+                    <Button Content="Delete" Grid.Column="1" Margin="5,5,0,5"/>
+                </Grid>
+                <ListBox Width="200" Name="Listbox_ODLC" SelectionChanged="Listbox_ODLC_SelectionChanged" >
+                    <ListBox.ItemTemplate >
+                        <DataTemplate>
+                            <Grid Margin="0,2" Height="50">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Image Source="{Binding ThumbnailImage_BitmapImage}" Grid.Column="0" Width="50" Height="50"/> 
+                                <TextBlock Grid.Column="1" Text="{Binding objecttype, TargetNullValue='No Name Found'}" Width="110" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+            </DockPanel>
+            <!-- Bottom Bar-->
+            <Grid DockPanel.Dock="Bottom" Height="20">
+
+            </Grid>
+
+            <Border BorderBrush="#FFABADB3" BorderThickness="1" Margin="10">
+                <DockPanel Name="TargetEditor">
+                    <StackPanel DockPanel.Dock="Left" Width="130" Margin="0,50,0,0">
+                        <Label Height="30" VerticalContentAlignment="Center" Content="Latitude"/>
+                        <Label Height="30" VerticalContentAlignment="Center" Content="Longitude"/>
+                        <Label Height="30" VerticalContentAlignment="Center" Content="Orientation"/>
+                        <Label Height="30" VerticalContentAlignment="Center" Content="Shape"/>
+                        <Label Height="30" VerticalContentAlignment="Center" Content="Shape Colour"/>
+                        <Label Height="30" VerticalContentAlignment="Center" Content="Alphanumeric"/>
+                        <Label Height="30" VerticalContentAlignment="Center" Content="Alphanumeric Colour"/>
+                    </StackPanel>
+                    <StackPanel DockPanel.Dock="Left" Width="130" Margin="0,50,0,0">
+                        <TextBox   Name="Textbox_Latitude" Height="20" Width="100" Margin="5" Text="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.Latitude}"/>
+                        <TextBox   Name="Textbox_Longitude" Height="20" Width="100" Margin="5" Text="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.Longitude}"/>
+                        <ComboBox  Name="Combobox_Orientation" Height="20" Width="100" Margin="5" SelectedItem="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.Orientation}"/>
+                        <ComboBox  Name="Combobox_Shape" Height="20" Width="100" Margin="5" SelectedItem="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.Shape}"/>
+                        <ComboBox  Name="Combobox_ShapeColour" Height="20" Width="100" Margin="5" SelectedItem="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.ShapeColor}"/>
+                        <TextBox   Name="Textbox_Alphanumeric" Height="20" Width="100" Margin="5" Text="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.Alphanumeric}"/>
+                        <ComboBox  Name="Combobox_AlphanumericColour" Height="20" Width="100" Margin="5" SelectedItem="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.AlphanumericColor}"/>
+                    </StackPanel>
+                    <Grid DockPanel.Dock="Top">
+                        <Button Content="Add Image" Height="20" Width="75" HorizontalAlignment="Right" Margin="5"/>
+                    </Grid>
+                    <Border BorderBrush="#FFABADB3" BorderThickness="1">
+                        <Grid>
+                            <Image Name="ImageBox"  Source="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.ThumbnailImage_BitmapImage}">
+
+                            </Image>
+                            <Canvas Name="CropCanvas">
+                                <Rectangle StrokeThickness="2" Stroke="Red" Height="100" Width="100" Canvas.Left="103" Canvas.Top="122">
+                                    
+                                </Rectangle>
+                            </Canvas>
+                        </Grid>
+
+                    </Border>
+
+                </DockPanel>
+            </Border>
+
+
+        </DockPanel>
+
     </Grid>
 </Window>
