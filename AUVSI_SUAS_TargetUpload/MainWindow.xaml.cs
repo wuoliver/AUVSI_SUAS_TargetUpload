@@ -22,6 +22,8 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Runtime.CompilerServices;
+using Microsoft.Win32;
+using System.Globalization;
 
 namespace AUVSI_SUAS_TargetUpload
 {
@@ -63,6 +65,7 @@ namespace AUVSI_SUAS_TargetUpload
             Listbox_ODLC.ItemsSource = odlcList;
 
             //Set itemsource for the comboboxes in the UI
+            Combobox_Type.ItemsSource = Enum.GetValues(typeof(ODLC.ODLCType));
             Combobox_Orientation.ItemsSource = Enum.GetValues(typeof(ODLC.ODLCOrientation));
             Combobox_Shape.ItemsSource = Enum.GetValues(typeof(ODLC.ODLCShape));
             Combobox_ShapeColour.ItemsSource = Enum.GetValues(typeof(ODLC.ODLCColor));
@@ -276,383 +279,14 @@ namespace AUVSI_SUAS_TargetUpload
             return odlcObject;
         }
 
-
-
-        /// <summary>
-        /// Class that holds the OLDC object. 
-        /// </summary>
-        private class ODLC : INotifyPropertyChanged
+        private void AddImage_Click(object sender, RoutedEventArgs e)
         {
-            public event PropertyChangedEventHandler PropertyChanged;
-
-            private void NotifyPropertyChanged([CallerMemberName] String propertyName = "")
+            OpenFileDialog openFileDialog = new OpenFileDialog();
+            if(openFileDialog.ShowDialog() == true)
             {
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-            }
-
-            //We cannot send an id when uploading a new object. We only set ID when updating the object. 
-            [JsonProperty("mission", NullValueHandling = NullValueHandling.Ignore)]
-            private int? id;
-
-            public int? ID { get; }
-
-            [JsonProperty("mission")]
-            private int mission;
-
-            /// <summary>
-            /// The mission that the OLDC belongs to. 
-            /// </summary>
-            public int Mission
-            {
-                get
-                {
-                    return mission;
-                }
-                set
-                {
-                    if (value != mission)
-                    {
-                        mission = value;
-                        NotifyPropertyChanged();
-                    }
-                }
-            }
-
-            [JsonProperty("type")]
-            [JsonConverter(typeof(StringEnumConverter))]
-            private ODLCType type;
-
-            public ODLCType Type
-            {
-                get
-                {
-                    return type;
-                }
-                set
-                {
-                    if (value != type)
-                    {
-                        type = value;
-                        NotifyPropertyChanged();
-                    }
-                }
-            }
-
-            [JsonProperty("latitude")]
-            private double latitude;
-
-            public double Latitude
-            {
-                get
-                {
-                    return latitude;
-                }
-                set
-                {
-                    if (value != latitude)
-                    {
-                        latitude = value;
-                        NotifyPropertyChanged();
-                    }
-                }
-            }
-
-            
-
-            [JsonProperty("longitude")]
-            private double longitude;
-
-            public double Longitude
-            {
-                get
-                {
-                    return longitude;
-                }
-                set
-                {
-                    if (value != longitude)
-                    {
-                        longitude = value;
-                        NotifyPropertyChanged();
-                    }
-                }
-            }
-
-            [JsonProperty("orientation")]
-            [JsonConverter(typeof(StringEnumConverter))]
-            private ODLCOrientation orientation;
-
-            public ODLCOrientation Orientation
-            {
-                get
-                {
-                    return orientation;
-                }
-                set
-                {
-                    if (value != orientation)
-                    {
-                        orientation = value;
-                        NotifyPropertyChanged();
-                    }
-                }
-            }
-
-            [JsonProperty("shape")]
-            [JsonConverter(typeof(StringEnumConverter))]
-            private ODLCShape shape;
-
-            public ODLCShape Shape
-            {
-                get
-                {
-                    return shape;
-                }
-                set
-                {
-                    if (value != shape)
-                    {
-                        shape = value;
-                        NotifyPropertyChanged();
-                    }
-                }
-            }
-
-            [JsonProperty("shapeColor")]
-            [JsonConverter(typeof(StringEnumConverter))]
-            private ODLCColor shapeColor;
-
-            public ODLCColor ShapeColor
-            {
-                get
-                {
-                    return shapeColor;
-                }
-                set
-                {
-                    if (value != shapeColor)
-                    {
-                        shapeColor = value;
-                        NotifyPropertyChanged();
-                    }
-                }
-            }
-
-            [JsonProperty("alphanumeric")]
-            private string alphanumeric;
-
-            public string Alphanumeric
-            {
-                get
-                {
-                    return alphanumeric;
-                }
-                set
-                {
-                    if (value != alphanumeric)
-                    {
-                        alphanumeric = value;
-                        NotifyPropertyChanged();
-                    }
-                }
-            }
-
-
-            [JsonProperty("alphanumeric_color")]
-            [JsonConverter(typeof(StringEnumConverter))]
-            private ODLCColor alphanumericColor;
-
-            public ODLCColor AlphanumericColor
-            {
-                get
-                {
-                    return alphanumericColor;
-                }
-                set
-                {
-                    if (value != alphanumericColor)
-                    {
-                        alphanumericColor = value;
-                        NotifyPropertyChanged();
-                    }
-                }
-            }
-
-            [JsonProperty("description")]
-            private string description;
-
-            public string Description
-            {
-                get
-                {
-                    return description;
-                }
-                set
-                {
-                    if (value != description)
-                    {
-                        description = value;
-                        NotifyPropertyChanged();
-                    }
-                }
-            }
-
-            [JsonProperty("autonomous")]
-            private bool autonomous;
-
-            public bool Autonomous
-            {
-                get
-                {
-                    return autonomous;
-                }
-                set
-                {
-                    if (value != autonomous)
-                    {
-                        autonomous = value;
-                        NotifyPropertyChanged();
-                    }
-                }
-            }
-
-            private Bitmap targetImage;
-
-            public Bitmap TargetImage
-            {
-                get
-                {
-                    return targetImage;
-                }
-                set
-                {
-                    if (value != targetImage)
-                    {
-                        targetImage = value;
-                        NotifyPropertyChanged();
-                    }
-                }
-            }
-
-            private Bitmap thumbnailImage;
-
-            public Bitmap ThumbnailImage
-            {
-                get
-                {
-                    return thumbnailImage;
-                }
-                set
-                {
-                    if(value != thumbnailImage)
-                    {
-                        thumbnailImage = value;
-                        NotifyPropertyChanged();
-                    }
-                }
-            }
-
-            
-            //Returns a BitmapImage to be displayed on the UI. 
-            public BitmapImage ThumbnailImage_BitmapImage
-            {
-                get
-                {
-                    //Databelow copied from  https://stackoverflow.com/questions/22499407/how-to-display-a-bitmap-in-a-wpf-image
-                    using (MemoryStream memory = new MemoryStream())
-                    {
-                        thumbnailImage.Save(memory, System.Drawing.Imaging.ImageFormat.Bmp);
-                        memory.Position = 0;
-                        BitmapImage bitmapimage = new BitmapImage();
-                        bitmapimage.BeginInit();
-                        bitmapimage.StreamSource = memory;
-                        bitmapimage.CacheOption = BitmapCacheOption.OnLoad;
-                        bitmapimage.EndInit();
-
-                        return bitmapimage;
-                    }
-                }
-            }
-
-            //Object for testing 
-            public string objecttype { get; set; }
-
-            public ODLC()
-            {
-                id = null;
-                mission = 1;
-                type = ODLCType.STANDARD;
-                latitude = 0;
-                longitude = 0;
-                orientation = ODLCOrientation.N;
-                shape = ODLCShape.CIRCLE;
-                shapeColor = ODLCColor.BLUE;
-                alphanumeric = "A";
-                alphanumericColor = ODLCColor.BLUE;
-                description = "";
-                autonomous = false;
-                thumbnailImage = new Bitmap(Properties.Resources.PlaceholderImage);
-                targetImage = new Bitmap(Properties.Resources.PlaceholderImage);
-                objecttype = "TESTVALUE";
-            }
-
-            public string getJson()
-            {
-                return JsonConvert.SerializeObject(this, new Newtonsoft.Json.Converters.StringEnumConverter());
-            }
-
-            public enum ODLCType
-            {
-                // Standard ODLCs take latitude, longitude, orientation, shape and
-                // color, alphanumeric and color, and if processed autonomously.
-                // Includes Off Axis ODLC
-                STANDARD,
-                // Emergent takes latitude, longitude, description, and if process
-                // autonomously.
-                EMERGENT
-            }
-
-            public enum ODLCShape
-            {
-                CIRCLE,
-                SEMICIRCLE,
-                QUARTER_CIRCLE,
-                TRIANGLE,
-                SQUARE,
-                RECTANGLE,
-                TRAPEZOID,
-                PENTAGON,
-                HEXAGON,
-                HEPTAGON,
-                OCTAGON,
-                STAR,
-                CROSS
-            }
-
-            public enum ODLCColor
-            {
-                WHITE,
-                BLACK,
-                GRAY,
-                RED,
-                BLUE,
-                GREEN,
-                YELLOW,
-                PURPLE,
-                BROWN,
-                ORANGE
-            }
-
-            public enum ODLCOrientation
-            {
-                N,
-                NE,
-                E,
-                SE,
-                S,
-                SW,
-                W,
-                NW
+                //We create new bitmaps for each, because we don't want to thumbnail to be modified when we change the target image. 
+                ((ODLC)Listbox_ODLC.SelectedItem).TargetImage = new Bitmap(openFileDialog.FileName);
+                ((ODLC)Listbox_ODLC.SelectedItem).ThumbnailImage = new Bitmap(openFileDialog.FileName);
             }
         }
 
@@ -672,5 +306,507 @@ namespace AUVSI_SUAS_TargetUpload
                     throw new NotImplementedException();
             }
         }
+
+        private void AddTarget_Click(object sender, RoutedEventArgs e)
+        {
+            odlcList.Add(new ODLC());
+        }
+
+        private void DeleteTarget_Click(object sender, RoutedEventArgs e)
+        {
+            MessageBoxResult result =  MessageBox.Show("Are you sure you want to delete this target?\r\nThis cannot be undone.", "Confirm Delete", MessageBoxButton.YesNo);
+            if(result == MessageBoxResult.Yes)
+            {
+                try
+                {
+                    odlcList.Remove((ODLC)Listbox_ODLC.SelectedItem);
+                }
+                catch
+                {
+
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Class that holds the OLDC object. 
+    /// </summary>
+    public class ODLC : INotifyPropertyChanged
+    {
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        private void NotifyPropertyChanged([CallerMemberName] String propertyName = "")
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        //We cannot send an id when uploading a new object. We only set ID when updating the object. 
+        [JsonProperty("mission", NullValueHandling = NullValueHandling.Ignore)]
+        private int? id;
+
+        public int? ID { get; }
+
+        [JsonProperty("mission")]
+        private int mission;
+
+        /// <summary>
+        /// The mission that the OLDC belongs to. 
+        /// </summary>
+        public int Mission
+        {
+            get
+            {
+                return mission;
+            }
+            set
+            {
+                if (value != mission)
+                {
+                    mission = value;
+                    NotifyPropertyChanged();
+                }
+            }
+        }
+
+        [JsonProperty("type")]
+        [JsonConverter(typeof(StringEnumConverter))]
+        private ODLCType type;
+
+        public ODLCType Type
+        {
+            get
+            {
+                return type;
+            }
+            set
+            {
+                if (value != type)
+                {
+                    type = value;
+                    NotifyPropertyChanged();
+                }
+            }
+        }
+
+        [JsonProperty("latitude")]
+        private double latitude;
+
+        public double Latitude
+        {
+            get
+            {
+                return latitude;
+            }
+            set
+            {
+                if (value != latitude)
+                {
+                    latitude = value;
+                    NotifyPropertyChanged();
+                }
+            }
+        }
+
+
+
+        [JsonProperty("longitude")]
+        private double longitude;
+
+        public double Longitude
+        {
+            get
+            {
+                return longitude;
+            }
+            set
+            {
+                if (value != longitude)
+                {
+                    longitude = value;
+                    NotifyPropertyChanged();
+                }
+            }
+        }
+
+        [JsonProperty("orientation")]
+        [JsonConverter(typeof(StringEnumConverter))]
+        private ODLCOrientation orientation;
+
+        public ODLCOrientation Orientation
+        {
+            get
+            {
+                return orientation;
+            }
+            set
+            {
+                if (value != orientation)
+                {
+                    orientation = value;
+                    NotifyPropertyChanged();
+                }
+            }
+        }
+
+        [JsonProperty("shape")]
+        [JsonConverter(typeof(StringEnumConverter))]
+        private ODLCShape shape;
+
+        public ODLCShape Shape
+        {
+            get
+            {
+                return shape;
+            }
+            set
+            {
+                if (value != shape)
+                {
+                    shape = value;
+                    NotifyPropertyChanged();
+                }
+            }
+        }
+
+        [JsonProperty("shapeColor")]
+        [JsonConverter(typeof(StringEnumConverter))]
+        private ODLCColor shapeColor;
+
+        public ODLCColor ShapeColor
+        {
+            get
+            {
+                return shapeColor;
+            }
+            set
+            {
+                if (value != shapeColor)
+                {
+                    shapeColor = value;
+                    NotifyPropertyChanged();
+                }
+            }
+        }
+
+        [JsonProperty("alphanumeric")]
+        private string alphanumeric;
+
+        public string Alphanumeric
+        {
+            get
+            {
+                return alphanumeric;
+            }
+            set
+            {
+                if (value != alphanumeric)
+                {
+                    alphanumeric = value;
+                    NotifyPropertyChanged();
+                }
+            }
+        }
+
+
+        [JsonProperty("alphanumeric_color")]
+        [JsonConverter(typeof(StringEnumConverter))]
+        private ODLCColor alphanumericColor;
+
+        public ODLCColor AlphanumericColor
+        {
+            get
+            {
+                return alphanumericColor;
+            }
+            set
+            {
+                if (value != alphanumericColor)
+                {
+                    alphanumericColor = value;
+                    NotifyPropertyChanged();
+                }
+            }
+        }
+
+        [JsonProperty("description")]
+        private string description;
+
+        public string Description
+        {
+            get
+            {
+                return description;
+            }
+            set
+            {
+                if (value != description)
+                {
+                    description = value;
+                    NotifyPropertyChanged();
+                }
+            }
+        }
+
+        [JsonProperty("autonomous")]
+        private bool autonomous;
+
+        public bool Autonomous
+        {
+            get
+            {
+                return autonomous;
+            }
+            set
+            {
+                if (value != autonomous)
+                {
+                    autonomous = value;
+                    NotifyPropertyChanged();
+                }
+            }
+        }
+
+        private Bitmap targetImage;
+
+        public Bitmap TargetImage
+        {
+            get
+            {
+                return targetImage;
+            }
+            set
+            {
+                if (value != targetImage)
+                {
+                    targetImage = value;
+                    NotifyPropertyChanged();
+                    NotifyPropertyChanged("TargetImage_BitmapImage");
+                }
+            }
+        }
+
+        private Bitmap thumbnailImage;
+
+        public Bitmap ThumbnailImage
+        {
+            get
+            {
+                return thumbnailImage;
+            }
+            set
+            {
+                if (value != thumbnailImage)
+                {
+                    thumbnailImage = value;
+                    NotifyPropertyChanged();
+                    NotifyPropertyChanged("ThumbnailImage_BitmapImage");
+                }
+            }
+        }
+
+
+        //Returns a BitmapImage to be displayed on the listbox as a thumbnail. 
+        public BitmapImage ThumbnailImage_BitmapImage
+        {
+            get
+            {
+                //Databelow copied from  https://stackoverflow.com/questions/22499407/how-to-display-a-bitmap-in-a-wpf-image
+                using (MemoryStream memory = new MemoryStream())
+                {
+                    thumbnailImage.Save(memory, System.Drawing.Imaging.ImageFormat.Bmp);
+                    memory.Position = 0;
+                    BitmapImage bitmapimage = new BitmapImage();
+                    bitmapimage.BeginInit();
+                    bitmapimage.StreamSource = memory;
+                    bitmapimage.CacheOption = BitmapCacheOption.OnLoad;
+                    bitmapimage.EndInit();
+
+                    return bitmapimage;
+                }
+            }
+        }
+
+        //Returns a BitmapImage object to be displayed for the image cropper
+        public BitmapImage TargetImage_BitmapImage
+        {
+            get
+            {
+                //Code below copied from  https://stackoverflow.com/questions/22499407/how-to-display-a-bitmap-in-a-wpf-image
+                using (MemoryStream memory = new MemoryStream())
+                {
+                    TargetImage.Save(memory, System.Drawing.Imaging.ImageFormat.Bmp);
+                    memory.Position = 0;
+                    BitmapImage bitmapimage = new BitmapImage();
+                    bitmapimage.BeginInit();
+                    bitmapimage.StreamSource = memory;
+                    bitmapimage.CacheOption = BitmapCacheOption.OnLoad;
+                    bitmapimage.EndInit();
+
+                    return bitmapimage;
+                }
+            }
+        }
+
+        public ODLC()
+        {
+            id = null;
+            mission = 1;
+            type = ODLCType.STANDARD;
+            latitude = 0;
+            longitude = 0;
+            orientation = ODLCOrientation.N;
+            shape = ODLCShape.CIRCLE;
+            shapeColor = ODLCColor.BLUE;
+            alphanumeric = "A";
+            alphanumericColor = ODLCColor.BLUE;
+            description = "";
+            autonomous = false;
+            thumbnailImage = new Bitmap(Properties.Resources.PlaceholderImage);
+            targetImage = new Bitmap(Properties.Resources.PlaceholderImage);
+        }
+
+        public string getJson()
+        {
+            return JsonConvert.SerializeObject(this, new Newtonsoft.Json.Converters.StringEnumConverter());
+        }
+
+        public enum ODLCType
+        {
+            // Standard ODLCs take latitude, longitude, orientation, shape and
+            // color, alphanumeric and color, and if processed autonomously.
+            // Includes Off Axis ODLC
+            STANDARD,
+            // Emergent takes latitude, longitude, description, and if process
+            // autonomously.
+            EMERGENT
+        }
+
+        public enum ODLCShape
+        {
+            CIRCLE,
+            SEMICIRCLE,
+            QUARTER_CIRCLE,
+            TRIANGLE,
+            SQUARE,
+            RECTANGLE,
+            TRAPEZOID,
+            PENTAGON,
+            HEXAGON,
+            HEPTAGON,
+            OCTAGON,
+            STAR,
+            CROSS
+        }
+
+        public enum ODLCColor
+        {
+            WHITE,
+            BLACK,
+            GRAY,
+            RED,
+            BLUE,
+            GREEN,
+            YELLOW,
+            PURPLE,
+            BROWN,
+            ORANGE
+        }
+
+        public enum ODLCOrientation
+        {
+            N,
+            NE,
+            E,
+            SE,
+            S,
+            SW,
+            W,
+            NW
+        }
+    }
+
+   
+
+    public class EnumToStringConverter : IValueConverter
+    {
+
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            try
+            {
+                return Enum.GetName(value.GetType(), value);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+
+    }
+
+    //Visibility converter for Standard Target Fields
+    public class StandardTargetVisibilityConverter : IValueConverter
+    {
+
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            try
+            {
+                if((ODLC.ODLCType)value == ODLC.ODLCType.STANDARD)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+
+    }
+
+    //Visibility converter for Emergent Target Fields
+    public class EmergentTargetVisibilityConverter : IValueConverter
+    {
+
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            try
+            {
+                if ((ODLC.ODLCType)value == ODLC.ODLCType.STANDARD)
+                {
+                    return false;
+                }
+                else
+                {
+                    return true;
+                }
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+
     }
 }

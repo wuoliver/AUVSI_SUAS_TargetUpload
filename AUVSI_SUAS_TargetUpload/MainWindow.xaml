@@ -6,6 +6,11 @@
         xmlns:local="clr-namespace:AUVSI_SUAS_TargetUpload"
         mc:Ignorable="d"
         Title="AUVSI SUAS Target Upload Program" Height="450" Width="800">
+    <Window.Resources>
+        <local:EnumToStringConverter x:Key="EnumToStringConverter"/>
+        <local:StandardTargetVisibilityConverter x:Key="StandardTargetVisibilityConverter"/>
+        <local:EmergentTargetVisibilityConverter x:Key="EmergentTargetVisibilityConverter"/>
+    </Window.Resources>
     <Grid>
         <DockPanel LastChildFill="True">
             <!--Menu Bar-->
@@ -32,8 +37,8 @@
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-                    <Button Content="Add" Grid.Column="0" Margin="0,5,5,5"/>
-                    <Button Content="Delete" Grid.Column="1" Margin="5,5,0,5"/>
+                    <Button Content="Add" Grid.Column="0" Margin="0,5,5,5" Click="AddTarget_Click"/>
+                    <Button Content="Delete" Grid.Column="1" Margin="5,5,0,5" Click="DeleteTarget_Click"/>
                 </Grid>
                 <ListBox Width="200" Name="Listbox_ODLC" SelectionChanged="Listbox_ODLC_SelectionChanged" >
                     <ListBox.ItemTemplate >
@@ -43,8 +48,8 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <Image Source="{Binding ThumbnailImage_BitmapImage}" Grid.Column="0" Width="50" Height="50"/> 
-                                <TextBlock Grid.Column="1" Text="{Binding objecttype, TargetNullValue='No Name Found'}" Width="110" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                                <Image Source="{Binding ThumbnailImage_BitmapImage}" Grid.Column="0" Width="50" Height="50"/>
+                                <TextBlock Grid.Column="1" Text="{Binding Type, Converter={StaticResource EnumToStringConverter}}" Width="110" VerticalAlignment="Center" HorizontalAlignment="Right"/>
                             </Grid>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
@@ -58,7 +63,8 @@
 
             <Border BorderBrush="#FFABADB3" BorderThickness="1" Margin="10">
                 <DockPanel Name="TargetEditor">
-                    <StackPanel DockPanel.Dock="Left" Width="130" Margin="0,50,0,0">
+                    <StackPanel DockPanel.Dock="Left" Width="130" Margin="0,0,0,0">
+                        <Label Height="30" VerticalContentAlignment="Center" Content="Target Type"/>
                         <Label Height="30" VerticalContentAlignment="Center" Content="Latitude"/>
                         <Label Height="30" VerticalContentAlignment="Center" Content="Longitude"/>
                         <Label Height="30" VerticalContentAlignment="Center" Content="Orientation"/>
@@ -66,27 +72,52 @@
                         <Label Height="30" VerticalContentAlignment="Center" Content="Shape Colour"/>
                         <Label Height="30" VerticalContentAlignment="Center" Content="Alphanumeric"/>
                         <Label Height="30" VerticalContentAlignment="Center" Content="Alphanumeric Colour"/>
+                        <Label Height="30" VerticalContentAlignment="Center" Content="Description"/>
                     </StackPanel>
-                    <StackPanel DockPanel.Dock="Left" Width="130" Margin="0,50,0,0">
-                        <TextBox   Name="Textbox_Latitude" Height="20" Width="100" Margin="5" Text="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.Latitude}"/>
-                        <TextBox   Name="Textbox_Longitude" Height="20" Width="100" Margin="5" Text="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.Longitude}"/>
-                        <ComboBox  Name="Combobox_Orientation" Height="20" Width="100" Margin="5" SelectedItem="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.Orientation}"/>
-                        <ComboBox  Name="Combobox_Shape" Height="20" Width="100" Margin="5" SelectedItem="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.Shape}"/>
-                        <ComboBox  Name="Combobox_ShapeColour" Height="20" Width="100" Margin="5" SelectedItem="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.ShapeColor}"/>
-                        <TextBox   Name="Textbox_Alphanumeric" Height="20" Width="100" Margin="5" Text="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.Alphanumeric}"/>
-                        <ComboBox  Name="Combobox_AlphanumericColour" Height="20" Width="100" Margin="5" SelectedItem="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.AlphanumericColor}"/>
+                    <StackPanel DockPanel.Dock="Left" Width="130" Margin="0,0,0,0">
+                        <ComboBox  Name="Combobox_Type" Height="20" Width="100" Margin="5" 
+                                   SelectedItem="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.Type}"/>
+                        <TextBox   Name="Textbox_Latitude" Height="20" Width="100" Margin="5" 
+                                   Text="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.Latitude}"/>
+                        <TextBox   Name="Textbox_Longitude" Height="20" Width="100" Margin="5" 
+                                   Text="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.Longitude}"/>
+                        <ComboBox  Name="Combobox_Orientation" Height="20" Width="100" Margin="5" 
+                                   SelectedItem="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.Orientation}"
+                                   IsEnabled="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.Type, 
+                            Converter={StaticResource StandardTargetVisibilityConverter}}"/>
+                        <ComboBox  Name="Combobox_Shape" Height="20" Width="100" Margin="5" 
+                                   SelectedItem="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.Shape}"
+                                   IsEnabled="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.Type, 
+                            Converter={StaticResource StandardTargetVisibilityConverter}}"/>
+                        <ComboBox  Name="Combobox_ShapeColour" Height="20" Width="100" Margin="5" 
+                                   SelectedItem="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.ShapeColor}"
+                                   IsEnabled="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.Type, 
+                            Converter={StaticResource StandardTargetVisibilityConverter}}"/>
+                        <TextBox   Name="Textbox_Alphanumeric" Height="20" Width="100" Margin="5" 
+                                   Text="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.Alphanumeric}"
+                                   IsEnabled="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.Type, 
+                            Converter={StaticResource StandardTargetVisibilityConverter}}"/>
+                        <ComboBox  Name="Combobox_AlphanumericColour" Height="20" Width="100" Margin="5" 
+                                   SelectedItem="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.AlphanumericColor}"
+                                   IsEnabled="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.Type, 
+                            Converter={StaticResource StandardTargetVisibilityConverter}}"/>
+                        <TextBox   Name="Textbox_Description" Height="80" Width="100" Margin="5" 
+                                   Text="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.Description}"
+                                   IsEnabled="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.Type, 
+                            Converter={StaticResource EmergentTargetVisibilityConverter}}" 
+                                   />
                     </StackPanel>
                     <Grid DockPanel.Dock="Top">
-                        <Button Content="Add Image" Height="20" Width="75" HorizontalAlignment="Right" Margin="5"/>
+                        <Button Content="Add Image" Height="20" Width="75" HorizontalAlignment="Right" Margin="5" Click="AddImage_Click"/>
                     </Grid>
                     <Border BorderBrush="#FFABADB3" BorderThickness="1">
                         <Grid>
-                            <Image Name="ImageBox"  Source="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.ThumbnailImage_BitmapImage}">
+                            <Image Name="ImageBox"  Source="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.TargetImage_BitmapImage}">
 
                             </Image>
                             <Canvas Name="CropCanvas">
-                                <Rectangle StrokeThickness="2" Stroke="Red" Height="100" Width="100" Canvas.Left="103" Canvas.Top="122">
-                                    
+                                <Rectangle StrokeThickness="2" Stroke="Red" Height="{Binding ElementName=CropCanvas, Path=Height}" Width="100" Canvas.Left="0" Canvas.Top="0">
+                                     
                                 </Rectangle>
                             </Canvas>
                         </Grid>
