@@ -298,23 +298,6 @@ namespace AUVSI_SUAS_TargetUpload
             }
         }
 
-        private void Listbox_ODLC_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            //Set the UI elements according to the type of target: Standard or Emergent
-            ODLC item = (ODLC)(sender as ListBox).SelectedItem;
-            switch (item.Type)
-            {
-                case ODLC.ODLCType.STANDARD:
-                    //Textbox_Latitude.SetBinding(item.Latitude);
-                    //Textbox_Longitude.DataContext = item.Longitude;
-                    break;
-                case ODLC.ODLCType.EMERGENT:
-                    break;
-                default:
-                    throw new NotImplementedException();
-            }
-        }
-
         private void AddTarget_Click(object sender, RoutedEventArgs e)
         {
             odlcList.Add(new ODLC());

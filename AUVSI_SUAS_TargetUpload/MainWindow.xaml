@@ -42,7 +42,7 @@
                     <Button Content="Add" Grid.Column="0" Margin="0,5,5,0" Click="AddTarget_Click"/>
                     <Button Content="Delete" Grid.Column="1" Margin="5,5,0,0" Click="DeleteTarget_Click"/>
                 </Grid>
-                <ListBox Width="200" Name="Listbox_ODLC" SelectionChanged="Listbox_ODLC_SelectionChanged" >
+                <ListBox Width="200" Name="Listbox_ODLC">
                     <ListBox.ItemTemplate >
                         <DataTemplate>
                             <Grid Margin="0,2" Height="50">
