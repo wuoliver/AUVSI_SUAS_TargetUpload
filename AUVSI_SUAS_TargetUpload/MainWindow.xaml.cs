@@ -128,7 +128,7 @@ namespace AUVSI_SUAS_TargetUpload
             {
                 MessageBox.Show(ex.Message.ToString(), "Error");
             }
-            
+
 
             return false;
         }
@@ -198,6 +198,7 @@ namespace AUVSI_SUAS_TargetUpload
                 HttpResponseMessage response = await gHttpClient.PutAsync(Properties.Settings.Default.url + "/api/odlcs/" + id, content);
                 if (response.StatusCode == HttpStatusCode.OK)
                 {
+                    string temp = await response.Content.ReadAsStringAsync();
                     odlcResponse = JsonConvert.DeserializeObject<ODLC>(await response.Content.ReadAsStringAsync());
                 }
                 else
@@ -329,26 +330,46 @@ namespace AUVSI_SUAS_TargetUpload
         private void AddTarget_Click(object sender, RoutedEventArgs e)
         {
             odlcList.Add(new ODLC());
-            if(odlcList.Count == 1)
+            if (odlcList.Count == 1)
             {
                 Listbox_ODLC.SelectedIndex = 0;
             }
         }
 
+        /// <summary>
+        /// Deletes the selected object in the listview. If the target has been uploaded to the server, we will mark it to delete.
+        /// If the target is only local, we ask before deleting it forever. 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void DeleteTarget_Click(object sender, RoutedEventArgs e)
         {
-            MessageBoxResult result = MessageBox.Show("Are you sure you want to delete this target?\r\nThis cannot be undone.", "Confirm Delete", MessageBoxButton.YesNo);
-            if (result == MessageBoxResult.Yes)
+
+            ODLC objectToDelete = (ODLC)Listbox_ODLC.SelectedItem;
+
+            //Object is local, we don't have to make changes on the server. 
+            if (objectToDelete.SyncStatus == ODLC.ODLCSyncStatus.UNSYNCED)
             {
-                try
+                MessageBoxResult result = MessageBox.Show("Are you sure you want to delete this target?\r\nThis cannot be undone.", "Confirm Delete", MessageBoxButton.YesNo);
+                if (result == MessageBoxResult.Yes)
                 {
-                    odlcList.Remove((ODLC)Listbox_ODLC.SelectedItem);
-                }
-                catch
-                {
-                    throw new NotImplementedException();
+                    try
+                    {
+                        odlcList.Remove((ODLC)Listbox_ODLC.SelectedItem);
+                    }
+                    catch
+                    {
+                        throw new NotImplementedException();
+                    }
                 }
             }
+            //Object is on the server. We instruct the server to delete the object next time we sync. 
+            else
+            {
+                objectToDelete.SyncStatus = ODLC.ODLCSyncStatus.DELETE;
+            }
+
+
         }
 
         private async void Connect_Click(object sender, RoutedEventArgs e)
@@ -359,14 +380,14 @@ namespace AUVSI_SUAS_TargetUpload
             }));
 
             bool result = await Login();
-            
+
             if (result)
             {
                 await Dispatcher.BeginInvoke(new Action(delegate
                 {
                     StatusLabel.Content = "Connected";
                 }));
-              
+
             }
             else
             {
@@ -378,16 +399,25 @@ namespace AUVSI_SUAS_TargetUpload
 
             //Sync with the server, and get all uploaded targets, in case we accidentally closed the program, or are working on two different computers. 
             List<ODLC> uploadedODLCs = await getOLDC();
-            foreach(ODLC i in uploadedODLCs)
+            syncODLC(uploadedODLCs);
+
+        }
+
+        /// <summary>
+        /// Syncs the list of ODLCs on the server with our local copy. 
+        /// </summary>
+        /// <param name="serverODLCs"></param>
+        private void syncODLC(List<ODLC> serverODLCs)
+        {
+            foreach (ODLC i in serverODLCs)
             {
                 bool targetExistsLocally = false;
-                //If target ID on the server matches the one on our local list, we merge the changes???
-                foreach(ODLC j in odlcList)
+                //If target ID on the server matches the one on our local list, we consider the local copy the good one, and we don't do anything. 
+                foreach (ODLC j in odlcList)
                 {
-                    if(j.ID == i.ID)
+                    if (j.ID == i.ID)
                     {
-                        //Do something
-                        targetExistsLocally = true;
+                        targetExistsLocally = true;                  
                     }
                 }
                 if (!targetExistsLocally)
@@ -396,7 +426,6 @@ namespace AUVSI_SUAS_TargetUpload
                     odlcList.Add(i);
                 }
             }
-
         }
 
         /// <summary>
@@ -417,49 +446,59 @@ namespace AUVSI_SUAS_TargetUpload
 
             int numTargets = odlcList.Count();
 
+            //Sync local copy with server. 
             List<ODLC> temp = await getOLDC();
+            syncODLC(temp);
 
             ODLC returnedObject;
             for (int i = 0; i < numTargets; i++)
             {
+                
                 await Dispatcher.BeginInvoke(new Action(delegate
                 {
                     StatusLabel.Content = String.Format("Syncing Target {0} of {1}", i, numTargets);
                 }));
 
-                if(odlcList[i].SyncStatus == ODLC.ODLCSyncStatus.DELETE)
+                if (odlcList[i].SyncStatus == ODLC.ODLCSyncStatus.DELETE)
                 {
                     //Delete the object
-                    await deleteODLC((int)odlcList[i].ID);
-                    odlcList.RemoveAt(i);
-                    numTargets--;
-                    i--;
+                    bool deleted = await deleteODLC((int)odlcList[i].ID);
+                    if (deleted)
+                    {
+                        odlcList.RemoveAt(i);
+                        numTargets--;
+                        i--;
+                    }
                     continue;
                 }
 
                 if (odlcList[i].ID == null)
                 {
-                    string test = odlcList[i].getJson();
                     returnedObject = await postODLC(odlcList[i]);
-                    odlcList[i] = returnedObject;
+                    if(returnedObject!= null)
+                    {
+                        odlcList[i].CopyObjectSettingsFromServer(returnedObject);
+                    }
                 }
                 else
                 {
                     returnedObject = await updateODLC(odlcList[i]);
-                    odlcList[i] = returnedObject;
+                    if (returnedObject != null)
+                    {
+                        odlcList[i].CopyObjectSettingsFromServer(returnedObject);
+                    }
                 }
             }
-            
-            if(odlcList.Count > 0)
+
+            if (odlcList.Count > 0)
             {
                 Listbox_ODLC.SelectedIndex = 0;
             }
-            
+
             await Dispatcher.BeginInvoke(new Action(delegate
             {
                 StatusLabel.Content = "Sync Complete";
             }));
-
         }
     }
 
@@ -473,6 +512,10 @@ namespace AUVSI_SUAS_TargetUpload
 
         private void NotifyPropertyChanged([CallerMemberName] String propertyName = "")
         {
+            if(syncStatus != ODLCSyncStatus.UNSYNCED && syncStatus != ODLCSyncStatus.DELETE && propertyName != "SyncStatus")
+            {
+                SyncStatus = ODLCSyncStatus.MODIFIED;
+            }
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
@@ -482,8 +525,17 @@ namespace AUVSI_SUAS_TargetUpload
 
         public int? ID
         {
-            get {
+            get
+            {
                 return id;
+            }
+            set
+            {
+                if (value != id)
+                {
+                    id = value;
+                    NotifyPropertyChanged();
+                }
             }
         }
 
@@ -649,7 +701,7 @@ namespace AUVSI_SUAS_TargetUpload
         }
 
 
-        [JsonProperty("alphanumeric_color")]
+        [JsonProperty("alphanumericColor")]
         [JsonConverter(typeof(StringEnumConverter))]
         private ODLCColor alphanumericColor;
 
@@ -829,21 +881,21 @@ namespace AUVSI_SUAS_TargetUpload
         /// Used to copy the object returned from the server, since it has been validated. 
         /// </summary>
         /// <param name="odlcObject"></param>
-        public void CopyObjectSettings(ODLC odlcObject)
+        public void CopyObjectSettingsFromServer(ODLC odlcObject)
         {
-            id = odlcObject.id;
-            mission = odlcObject.mission;
-            type = odlcObject.type;
-            latitude = odlcObject.latitude;
-            longitude = odlcObject.longitude;
-            orientation = odlcObject.orientation;
-            shape = odlcObject.shape;
-            shapeColor = odlcObject.shapeColor;
-            alphanumeric = odlcObject.alphanumeric;
-            alphanumericColor = odlcObject.alphanumericColor;
-            description = odlcObject.description;
-            autonomous = false;
-            syncStatus = odlcObject.syncStatus;
+            ID = odlcObject.id;
+            Mission = odlcObject.mission;
+            Type = odlcObject.type;
+            Latitude = odlcObject.latitude;
+            Longitude = odlcObject.longitude;
+            Orientation = odlcObject.orientation;
+            Shape = odlcObject.shape;
+            ShapeColor = odlcObject.shapeColor;
+            Alphanumeric = odlcObject.alphanumeric;
+            AlphanumericColor = odlcObject.alphanumericColor;
+            Description = odlcObject.description;
+            Autonomous = false;
+            SyncStatus = ODLCSyncStatus.SYNCED;
         }
 
         public string getJson()
@@ -1001,7 +1053,7 @@ namespace AUVSI_SUAS_TargetUpload
         {
             try
             {
-                if((int)value == -1)
+                if ((int)value == -1)
                 {
                     return false;
                 }

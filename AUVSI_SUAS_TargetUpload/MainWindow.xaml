@@ -23,19 +23,6 @@
             </Menu>
             <!-- ListBox for selecting targets-->
             <DockPanel DockPanel.Dock="Left"  Margin="10" >
-                <Border DockPanel.Dock="Top" BorderBrush="#FFABADB3" BorderThickness="1"> 
-                    <Grid Height="30" >
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <Label Content="Image" Grid.Column="0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
-                        <Label Content="Type" Grid.Column="1" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
-                        <Label Content="Sync Status" Grid.Column="2" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
-                    </Grid>
-                </Border>
-                
                 <Grid Height="25" DockPanel.Dock="Bottom">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
@@ -46,18 +33,32 @@
                             IsEnabled="{Binding ElementName=Listbox_ODLC, Path=SelectedIndex,
                             Converter={StaticResource ObjectSelectedToEnabledConverter}}"/>
                 </Grid>
-                <ListView Width="300" Name="Listbox_ODLC">
+                
+                <Border DockPanel.Dock="Top" BorderBrush="#FFABADB3" BorderThickness="1"> 
+                    <Grid Height="30" >
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="50"/>
+                            <ColumnDefinition Width="100"/>
+                            <ColumnDefinition Width="100"/>
+                        </Grid.ColumnDefinitions>
+                        <Label Content="Image" Grid.Column="0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+                        <Label Content="Type" Grid.Column="1" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+                        <Label Content="Sync Status" Grid.Column="2" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+                    </Grid>
+                </Border>
+                
+                <ListView Width="280" Name="Listbox_ODLC">
                     <ListView.ItemTemplate>
                         <DataTemplate>
                             <Grid Margin="0,2" Height="50">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="50"/>
+                                    <ColumnDefinition Width="100"/>
+                                    <ColumnDefinition Width="100"/>
                                 </Grid.ColumnDefinitions>
-                                <Image Source="{Binding ThumbnailImage_BitmapImage}" Grid.Column="0" Width="50" Height="50"/>
-                                <TextBlock Grid.Column="1" Text="{Binding Type, Converter={StaticResource EnumToStringConverter}}" Width="110" VerticalAlignment="Center" HorizontalAlignment="Right"/>
-                                <TextBlock Grid.Column="2" Text="{Binding Status, Converter={StaticResource EnumToStringConverter}}" Width="110" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                                <Image Source="{Binding ThumbnailImage_BitmapImage}" Grid.Column="0" Height="50"/>
+                                <TextBlock Grid.Column="1" Text="{Binding Type, Converter={StaticResource EnumToStringConverter}}"  VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                <TextBlock Grid.Column="2" Text="{Binding SyncStatus, Converter={StaticResource EnumToStringConverter}, Mode=OneWay}"  VerticalAlignment="Center" HorizontalAlignment="Center"/>
                             </Grid>
                         </DataTemplate>
                     </ListView.ItemTemplate>
