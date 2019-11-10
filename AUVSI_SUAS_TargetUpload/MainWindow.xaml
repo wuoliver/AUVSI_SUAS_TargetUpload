@@ -5,8 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:AUVSI_SUAS_TargetUpload"
         mc:Ignorable="d"
-        Title="AUVSI SUAS Target Upload Program" Height="450" Width="800"
-        MinHeight="450" MinWidth="800">
+        Title="AUVSI SUAS Target Upload Program" Height="450" Width="1000"
+        MinHeight="450" MinWidth="1000">
     <Window.Resources>
         <local:EnumToStringConverter x:Key="EnumToStringConverter"/>
         <local:StandardTargetVisibilityConverter x:Key="StandardTargetVisibilityConverter"/>
@@ -28,9 +28,11 @@
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <Label Content="Image" Grid.Column="0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
-                        <Label Content="Target Type" Grid.Column="1" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+                        <Label Content="Type" Grid.Column="1" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+                        <Label Content="Sync Status" Grid.Column="2" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
                     </Grid>
                 </Border>
                 
@@ -44,16 +46,18 @@
                             IsEnabled="{Binding ElementName=Listbox_ODLC, Path=SelectedIndex,
                             Converter={StaticResource ObjectSelectedToEnabledConverter}}"/>
                 </Grid>
-                <ListView Width="200" Name="Listbox_ODLC">
+                <ListView Width="300" Name="Listbox_ODLC">
                     <ListView.ItemTemplate>
                         <DataTemplate>
                             <Grid Margin="0,2" Height="50">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
                                 <Image Source="{Binding ThumbnailImage_BitmapImage}" Grid.Column="0" Width="50" Height="50"/>
                                 <TextBlock Grid.Column="1" Text="{Binding Type, Converter={StaticResource EnumToStringConverter}}" Width="110" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                                <TextBlock Grid.Column="2" Text="{Binding Status, Converter={StaticResource EnumToStringConverter}}" Width="110" VerticalAlignment="Center" HorizontalAlignment="Right"/>
                             </Grid>
                         </DataTemplate>
                     </ListView.ItemTemplate>

@@ -219,6 +219,34 @@ namespace AUVSI_SUAS_TargetUpload
         //Not mentioned in the interop program specs, but it does work. 
         //gHttpClient.DeleteAsync("/api/odlcs" + id.ToString())
 
+        private async Task<bool> deleteODLC(int id)
+        {
+            if (!gLoggedIn)
+            {
+                return false;
+            }
+            try
+            {
+                HttpResponseMessage response = await gHttpClient.DeleteAsync(Properties.Settings.Default.url + "/api/odlcs/" + id.ToString());
+                if (response.StatusCode == HttpStatusCode.OK)
+                {
+                    return true;
+                    //odlcList = JsonConvert.DeserializeObject<List<ODLC>>(await response.Content.ReadAsStringAsync());
+                }
+                else
+                {
+                    //Response code was not "ok"
+                    MessageBox.Show("Error: " + response.StatusCode.ToString(), "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return false;
+                }
+            }
+            catch (Exception Ex)
+            {
+                //Log something
+                return false;
+            }
+        }
+
         /// <summary>
         /// Gets a list of ODLC targets uploaded to the server. Returns NULL from any server errors. 
         /// </summary>
@@ -347,6 +375,28 @@ namespace AUVSI_SUAS_TargetUpload
                     StatusLabel.Content = "Connection Failed";
                 }));
             }
+
+            //Sync with the server, and get all uploaded targets, in case we accidentally closed the program, or are working on two different computers. 
+            List<ODLC> uploadedODLCs = await getOLDC();
+            foreach(ODLC i in uploadedODLCs)
+            {
+                bool targetExistsLocally = false;
+                //If target ID on the server matches the one on our local list, we merge the changes???
+                foreach(ODLC j in odlcList)
+                {
+                    if(j.ID == i.ID)
+                    {
+                        //Do something
+                        targetExistsLocally = true;
+                    }
+                }
+                if (!targetExistsLocally)
+                {
+                    i.SyncStatus = ODLC.ODLCSyncStatus.SYNCED;
+                    odlcList.Add(i);
+                }
+            }
+
         }
 
         /// <summary>
@@ -376,6 +426,16 @@ namespace AUVSI_SUAS_TargetUpload
                 {
                     StatusLabel.Content = String.Format("Syncing Target {0} of {1}", i, numTargets);
                 }));
+
+                if(odlcList[i].SyncStatus == ODLC.ODLCSyncStatus.DELETE)
+                {
+                    //Delete the object
+                    await deleteODLC((int)odlcList[i].ID);
+                    odlcList.RemoveAt(i);
+                    numTargets--;
+                    i--;
+                    continue;
+                }
 
                 if (odlcList[i].ID == null)
                 {
@@ -647,6 +707,24 @@ namespace AUVSI_SUAS_TargetUpload
             }
         }
 
+        private ODLCSyncStatus syncStatus;
+
+        public ODLCSyncStatus SyncStatus
+        {
+            get
+            {
+                return syncStatus;
+            }
+            set
+            {
+                if (value != syncStatus)
+                {
+                    syncStatus = value;
+                    NotifyPropertyChanged();
+                }
+            }
+        }
+
         private Bitmap targetImage;
 
         public Bitmap TargetImage
@@ -742,8 +820,30 @@ namespace AUVSI_SUAS_TargetUpload
             alphanumericColor = ODLCColor.BLUE;
             description = "";
             autonomous = false;
+            syncStatus = ODLCSyncStatus.UNSYNCED;
             thumbnailImage = new Bitmap(Properties.Resources.PlaceholderImage);
             targetImage = new Bitmap(Properties.Resources.PlaceholderImage);
+        }
+
+        /// <summary>
+        /// Used to copy the object returned from the server, since it has been validated. 
+        /// </summary>
+        /// <param name="odlcObject"></param>
+        public void CopyObjectSettings(ODLC odlcObject)
+        {
+            id = odlcObject.id;
+            mission = odlcObject.mission;
+            type = odlcObject.type;
+            latitude = odlcObject.latitude;
+            longitude = odlcObject.longitude;
+            orientation = odlcObject.orientation;
+            shape = odlcObject.shape;
+            shapeColor = odlcObject.shapeColor;
+            alphanumeric = odlcObject.alphanumeric;
+            alphanumericColor = odlcObject.alphanumericColor;
+            description = odlcObject.description;
+            autonomous = false;
+            syncStatus = odlcObject.syncStatus;
         }
 
         public string getJson()
@@ -803,6 +903,14 @@ namespace AUVSI_SUAS_TargetUpload
             SW,
             W,
             NW
+        }
+
+        public enum ODLCSyncStatus
+        {
+            DELETE,     //Object marked for deletion on the server 
+            SYNCED,     //Object synced to the server
+            UNSYNCED,   //Object not synced on the server 
+            MODIFIED    //Object synced, and has since been modified. 
         }
     }
 
