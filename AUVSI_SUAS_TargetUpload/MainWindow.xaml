@@ -5,11 +5,13 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:AUVSI_SUAS_TargetUpload"
         mc:Ignorable="d"
-        Title="AUVSI SUAS Target Upload Program" Height="450" Width="800">
+        Title="AUVSI SUAS Target Upload Program" Height="450" Width="800"
+        MinHeight="450" MinWidth="800">
     <Window.Resources>
         <local:EnumToStringConverter x:Key="EnumToStringConverter"/>
         <local:StandardTargetVisibilityConverter x:Key="StandardTargetVisibilityConverter"/>
         <local:EmergentTargetVisibilityConverter x:Key="EmergentTargetVisibilityConverter"/>
+        <local:ObjectSelectedToEnabledConverter x:Key="ObjectSelectedToEnabledConverter"/>
     </Window.Resources>
     <Grid>
         <DockPanel LastChildFill="True">
@@ -32,13 +34,13 @@
                     </Grid>
                 </Border>
                 
-                <Grid Height="30" DockPanel.Dock="Bottom">
+                <Grid Height="25" DockPanel.Dock="Bottom">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-                    <Button Content="Add" Grid.Column="0" Margin="0,5,5,5" Click="AddTarget_Click"/>
-                    <Button Content="Delete" Grid.Column="1" Margin="5,5,0,5" Click="DeleteTarget_Click"/>
+                    <Button Content="Add" Grid.Column="0" Margin="0,5,5,0" Click="AddTarget_Click"/>
+                    <Button Content="Delete" Grid.Column="1" Margin="5,5,0,0" Click="DeleteTarget_Click"/>
                 </Grid>
                 <ListBox Width="200" Name="Listbox_ODLC" SelectionChanged="Listbox_ODLC_SelectionChanged" >
                     <ListBox.ItemTemplate >
@@ -56,75 +58,130 @@
                 </ListBox>
 
             </DockPanel>
+            
             <!-- Bottom Bar-->
-            <Grid DockPanel.Dock="Bottom" Height="20">
-
-            </Grid>
-
-            <Border BorderBrush="#FFABADB3" BorderThickness="1" Margin="10">
-                <DockPanel Name="TargetEditor">
-                    <StackPanel DockPanel.Dock="Left" Width="130" Margin="0,0,0,0">
+            <DockPanel DockPanel.Dock="Bottom" Height="30" Margin="5,0,5,5" LastChildFill="False">
+                <Button Content="Connect" Width="70" Height="20" DockPanel.Dock="Right" Click="Connect_Click"/>
+                <Button Content="Sync" Width="70" Height="20" DockPanel.Dock="Left" Click="Sync_Click"/>
+                <Label Name="StatusLabel" Content="CurrentStatus" DockPanel.Dock="Bottom" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
+            </DockPanel>
+            
+            <!-- Editor -->
+            <Border BorderBrush="#FFABADB3" BorderThickness="1" Margin="10,10,10,5">
+                <Grid Name="TargetEditor">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="130" MinWidth="130"/>
+                        <ColumnDefinition Width="*"  MinWidth="130"/>
+                        <ColumnDefinition Width="5"/>
+                        <ColumnDefinition Width="*"  MinWidth="240"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" Width="130" Margin="0,0,0,0">
                         <Label Height="30" VerticalContentAlignment="Center" Content="Target Type"/>
+                        <Label Height="30" VerticalContentAlignment="Center" Content="Target ID"/>
                         <Label Height="30" VerticalContentAlignment="Center" Content="Latitude"/>
                         <Label Height="30" VerticalContentAlignment="Center" Content="Longitude"/>
-                        <Label Height="30" VerticalContentAlignment="Center" Content="Orientation"/>
-                        <Label Height="30" VerticalContentAlignment="Center" Content="Shape"/>
-                        <Label Height="30" VerticalContentAlignment="Center" Content="Shape Colour"/>
-                        <Label Height="30" VerticalContentAlignment="Center" Content="Alphanumeric"/>
-                        <Label Height="30" VerticalContentAlignment="Center" Content="Alphanumeric Colour"/>
-                        <Label Height="30" VerticalContentAlignment="Center" Content="Description"/>
+                        <Label Height="30" VerticalContentAlignment="Center" Content="Orientation"
+                               Visibility="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.Type, 
+                            Converter={StaticResource StandardTargetVisibilityConverter}, FallbackValue=Collapsed}"/>
+                        <Label Height="30" VerticalContentAlignment="Center" Content="Shape"
+                               Visibility="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.Type, 
+                            Converter={StaticResource StandardTargetVisibilityConverter}, FallbackValue=Collapsed}"/>
+                        <Label Height="30" VerticalContentAlignment="Center" Content="Shape Colour"
+                               Visibility="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.Type, 
+                            Converter={StaticResource StandardTargetVisibilityConverter}, FallbackValue=Collapsed}"/>
+                        <Label Height="30" VerticalContentAlignment="Center" Content="Alphanumeric"
+                               Visibility="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.Type, 
+                            Converter={StaticResource StandardTargetVisibilityConverter}, FallbackValue=Collapsed}"/>
+                        <Label Height="30" VerticalContentAlignment="Center" Content="Alphanumeric Colour"
+                               Visibility="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.Type, 
+                            Converter={StaticResource StandardTargetVisibilityConverter}, FallbackValue=Collapsed}"/>
+                        <Label Height="30" VerticalContentAlignment="Center" Content="Description"
+                               Visibility="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.Type, 
+                            Converter={StaticResource EmergentTargetVisibilityConverter}, FallbackValue=Collapsed}"/>
                     </StackPanel>
-                    <StackPanel DockPanel.Dock="Left" Width="130" Margin="0,0,0,0">
-                        <ComboBox  Name="Combobox_Type" Height="20" Width="100" Margin="5" 
-                                   SelectedItem="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.Type}"/>
-                        <TextBox   Name="Textbox_Latitude" Height="20" Width="100" Margin="5" 
-                                   Text="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.Latitude}"/>
-                        <TextBox   Name="Textbox_Longitude" Height="20" Width="100" Margin="5" 
-                                   Text="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.Longitude}"/>
-                        <ComboBox  Name="Combobox_Orientation" Height="20" Width="100" Margin="5" 
+                    <StackPanel Grid.Column="1" MinWidth="130" Margin="0,0,0,0">
+                        <ComboBox  Name="Combobox_Type" Height="20"  Margin="5" 
+                                   SelectedItem="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.Type}"
+                                   IsEnabled="{Binding ElementName=Listbox_ODLC, Path=SelectedIndex,
+                            Converter={StaticResource ObjectSelectedToEnabledConverter}}"/>
+                        
+                        <TextBox   Name="Textbox_ID" Height="20" Margin="5" 
+                                   IsReadOnly="True"
+                                   Text="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.ID, Mode=OneWay}"
+                                   IsEnabled="{Binding ElementName=Listbox_ODLC, Path=SelectedIndex,
+                            Converter={StaticResource ObjectSelectedToEnabledConverter}}"/>
+                        
+                        <TextBox   Name="Textbox_Latitude" Height="20"  Margin="5" 
+                                   Text="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.Latitude}"
+                                   IsEnabled="{Binding ElementName=Listbox_ODLC, Path=SelectedIndex,
+                            Converter={StaticResource ObjectSelectedToEnabledConverter}}"/>
+                        
+                        <TextBox   Name="Textbox_Longitude" Height="20"  Margin="5" 
+                                   Text="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.Longitude}"
+                                   IsEnabled="{Binding ElementName=Listbox_ODLC, Path=SelectedIndex,
+                            Converter={StaticResource ObjectSelectedToEnabledConverter}}"/>
+                        
+                        <ComboBox  Name="Combobox_Orientation" Height="20"  Margin="5" 
                                    SelectedItem="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.Orientation}"
-                                   IsEnabled="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.Type, 
-                            Converter={StaticResource StandardTargetVisibilityConverter}}"/>
-                        <ComboBox  Name="Combobox_Shape" Height="20" Width="100" Margin="5" 
+                                   Visibility="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.Type, 
+                            Converter={StaticResource StandardTargetVisibilityConverter}, FallbackValue=Collapsed}"/>
+                        
+                        <ComboBox  Name="Combobox_Shape" Height="20"  Margin="5" 
                                    SelectedItem="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.Shape}"
-                                   IsEnabled="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.Type, 
-                            Converter={StaticResource StandardTargetVisibilityConverter}}"/>
-                        <ComboBox  Name="Combobox_ShapeColour" Height="20" Width="100" Margin="5" 
+                                   Visibility="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.Type, 
+                            Converter={StaticResource StandardTargetVisibilityConverter}, FallbackValue=Collapsed}"/>
+                        
+                        <ComboBox  Name="Combobox_ShapeColour" Height="20"  Margin="5" 
                                    SelectedItem="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.ShapeColor}"
-                                   IsEnabled="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.Type, 
-                            Converter={StaticResource StandardTargetVisibilityConverter}}"/>
-                        <TextBox   Name="Textbox_Alphanumeric" Height="20" Width="100" Margin="5" 
+                                   Visibility="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.Type, 
+                            Converter={StaticResource StandardTargetVisibilityConverter}, FallbackValue=Collapsed}"/>
+                        
+                        <TextBox   Name="Textbox_Alphanumeric" Height="20"  Margin="5"
+                                   MaxLength="1"
                                    Text="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.Alphanumeric}"
-                                   IsEnabled="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.Type, 
-                            Converter={StaticResource StandardTargetVisibilityConverter}}"/>
-                        <ComboBox  Name="Combobox_AlphanumericColour" Height="20" Width="100" Margin="5" 
+                                   Visibility="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.Type, 
+                            Converter={StaticResource StandardTargetVisibilityConverter}, FallbackValue=Collapsed}"/>
+                        
+                        <ComboBox  Name="Combobox_AlphanumericColour" Height="20"  Margin="5" 
                                    SelectedItem="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.AlphanumericColor}"
-                                   IsEnabled="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.Type, 
-                            Converter={StaticResource StandardTargetVisibilityConverter}}"/>
-                        <TextBox   Name="Textbox_Description" Height="80" Width="100" Margin="5" 
+                                   Visibility="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.Type, 
+                            Converter={StaticResource StandardTargetVisibilityConverter}, FallbackValue=Collapsed}"/>
+                        
+                        <TextBox   Name="Textbox_Description" Height="80"  Margin="5" 
                                    Text="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.Description}"
-                                   IsEnabled="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.Type, 
-                            Converter={StaticResource EmergentTargetVisibilityConverter}}" 
-                                   />
+                                   Visibility="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.Type, 
+                            Converter={StaticResource EmergentTargetVisibilityConverter}, FallbackValue=Collapsed}" 
+                                    AcceptsReturn="True" TextWrapping="Wrap"/>
+                        
                     </StackPanel>
-                    <Grid DockPanel.Dock="Top">
-                        <Button Content="Add Image" Height="20" Width="75" HorizontalAlignment="Right" Margin="5" Click="AddImage_Click"/>
-                    </Grid>
-                    <Border BorderBrush="#FFABADB3" BorderThickness="1">
-                        <Grid>
-                            <Image Name="ImageBox"  Source="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.TargetImage_BitmapImage}">
 
-                            </Image>
-                            <Canvas Name="CropCanvas">
+                    <GridSplitter Grid.Column="2" HorizontalAlignment="Stretch" />
+                    
+                    <DockPanel Grid.Column="4" >
+                        <Grid DockPanel.Dock="Top">
+                            <Button Content="Add Image" Height="20" Width="75" HorizontalAlignment="Right" Margin="5" Click="AddImage_Click"
+                                IsEnabled="{Binding ElementName=Listbox_ODLC, Path=SelectedIndex,
+                            Converter={StaticResource ObjectSelectedToEnabledConverter}}"/>
+                        </Grid>
+                        <Border Grid.Column="3" BorderBrush="#FFABADB3" BorderThickness="1" Margin="5">
+                            <Grid>
+                                <Image Name="ImageBox"  Source="{Binding ElementName=Listbox_ODLC, Path=SelectedItem.TargetImage_BitmapImage}">
+
+                                </Image>
+                                <Canvas Name="CropCanvas">
+                                    <!--
                                 <Rectangle StrokeThickness="2" Stroke="Red" Height="{Binding ElementName=CropCanvas, Path=Height}" Width="100" Canvas.Left="0" Canvas.Top="0">
                                      
                                 </Rectangle>
-                            </Canvas>
-                        </Grid>
+                                -->
+                                </Canvas>
+                            </Grid>
 
-                    </Border>
+                        </Border>
+                    </DockPanel>
+                    
 
-                </DockPanel>
+                </Grid>
             </Border>
 
 

@@ -49,7 +49,7 @@ namespace AUVSI_SUAS_TargetUpload.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("http://192.168.1.19:8000")]
+        [global::System.Configuration.DefaultSettingValueAttribute("http://192.168.0.39:8000")]
         public string url {
             get {
                 return ((string)(this["url"]));

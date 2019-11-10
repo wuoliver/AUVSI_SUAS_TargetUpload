@@ -50,16 +50,16 @@ namespace AUVSI_SUAS_TargetUpload
 
             //Initialize the HttpClient object 
             gHttpClient = new HttpClient();
-            gHttpClient.Timeout = new TimeSpan(0, 0, 10);
+            //Set timeout to 30 minutes (overkill, but whatever)
+            gHttpClient.Timeout = new TimeSpan(0, 30, 0);
             gLoggedIn = false;
+
+            //Set status label to empty string.
+            StatusLabel.Content = "";
 
             //Initialize new odlcList object 
             odlcList = new ObservableCollection<ODLC>();
-            odlcList.Add(new ODLC());
-            odlcList.Add(new ODLC());
-            odlcList.Add(new ODLC());
-            odlcList.Add(new ODLC());
-            odlcList.Add(new ODLC());
+
 
             //Set datasource for the listbox
             Listbox_ODLC.ItemsSource = odlcList;
@@ -80,18 +80,20 @@ namespace AUVSI_SUAS_TargetUpload
         /// Function to log into the interop server using the supplied username and password.
         /// The HttpClient stores the cookie given by the server to use for future communication.
         /// </summary>
-        private void Login()
+        private async Task<bool> Login()
         {
             //Set base address of the httpclient in case it was changed. 
-            gHttpClient.BaseAddress = new Uri(Properties.Settings.Default.url);
+            //gHttpClient.BaseAddress = new Uri(Properties.Settings.Default.url); //We can't set the base address again once we've tried sending a request, and we can't make a new HttpClient object.  
             string login = string.Format("{{ \"username\":\"{0}\",\"password\":\"{1}\"}}", Properties.Settings.Default.username, Properties.Settings.Default.password);
             StringContent content = new StringContent(login, Encoding.UTF8, "application/json");
             try
             {
-                HttpResponseMessage response = gHttpClient.PostAsync("/api/login", content).Result;
+                HttpResponseMessage response = await gHttpClient.PostAsync(Properties.Settings.Default.url + "/api/login", content);
+                //HttpResponseMessage response = foo(content).Result;
                 if (response.StatusCode == HttpStatusCode.OK)
                 {
                     gLoggedIn = true;
+                    return true;
                 }
                 else if (response.StatusCode == HttpStatusCode.Unauthorized)
                 {
@@ -122,7 +124,13 @@ namespace AUVSI_SUAS_TargetUpload
                 MessageBox.Show(ex.Message.ToString(), "Error");
             }
 
-            return;
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message.ToString(), "Error");
+            }
+            
+
+            return false;
         }
 
         /// <summary>
@@ -130,7 +138,7 @@ namespace AUVSI_SUAS_TargetUpload
         /// </summary>
         /// <param name="odlcObject"></param>
         /// <returns></returns>
-        private ODLC postODLC(ODLC odlcObject)
+        private async Task<ODLC> postODLC(ODLC odlcObject)
         {
             if (!gLoggedIn)
             {
@@ -145,10 +153,10 @@ namespace AUVSI_SUAS_TargetUpload
             try
             {
                 StringContent content = new StringContent(odlcObject.getJson(), Encoding.UTF8, "application/json");
-                HttpResponseMessage response = gHttpClient.PostAsync("/api/odlcs", content).Result;
+                HttpResponseMessage response = await gHttpClient.PostAsync(Properties.Settings.Default.url + "/api/odlcs", content);
                 if (response.StatusCode == HttpStatusCode.OK)
                 {
-                    odlcResponse = JsonConvert.DeserializeObject<ODLC>(response.Content.ReadAsStringAsync().Result);
+                    odlcResponse = JsonConvert.DeserializeObject<ODLC>(await response.Content.ReadAsStringAsync());
                 }
                 else
                 {
@@ -164,14 +172,14 @@ namespace AUVSI_SUAS_TargetUpload
 
             return odlcResponse;
         }
-        
-        
+
+
         /// <summary>
         /// Updates the uploaded ODLC object on the server. Returns the updated object. 
         /// </summary>
         /// <param name="odlcObject"></param>
         /// <returns></returns>
-        private ODLC updateODLC(ODLC odlcObject)
+        private async Task<ODLC> updateODLC(ODLC odlcObject)
         {
             if (!gLoggedIn)
             {
@@ -187,10 +195,10 @@ namespace AUVSI_SUAS_TargetUpload
             try
             {
                 StringContent content = new StringContent(odlcObject.getJson(), Encoding.UTF8, "application/json");
-                HttpResponseMessage response = gHttpClient.PutAsync("/api/odlcs/" + id, content).Result;
+                HttpResponseMessage response = await gHttpClient.PutAsync(Properties.Settings.Default.url + "/api/odlcs/" + id, content);
                 if (response.StatusCode == HttpStatusCode.OK)
                 {
-                    odlcResponse = JsonConvert.DeserializeObject<ODLC>(response.Content.ReadAsStringAsync().Result);
+                    odlcResponse = JsonConvert.DeserializeObject<ODLC>(await response.Content.ReadAsStringAsync());
                 }
                 else
                 {
@@ -215,7 +223,7 @@ namespace AUVSI_SUAS_TargetUpload
         /// Gets a list of ODLC targets uploaded to the server. Returns NULL from any server errors. 
         /// </summary>
         /// <returns></returns>
-        private List<ODLC> getOLDC()
+        private async Task<List<ODLC>> getOLDC()
         {
             if (!gLoggedIn)
             {
@@ -224,10 +232,10 @@ namespace AUVSI_SUAS_TargetUpload
             List<ODLC> odlcList = null;
             try
             {
-                HttpResponseMessage response = gHttpClient.GetAsync("/api/odlcs").Result;
+                HttpResponseMessage response = await gHttpClient.GetAsync(Properties.Settings.Default.url + "/api/odlcs");
                 if (response.StatusCode == HttpStatusCode.OK)
                 {
-                    odlcList = JsonConvert.DeserializeObject<List<ODLC>>(response.Content.ReadAsStringAsync().Result);
+                    odlcList = JsonConvert.DeserializeObject<List<ODLC>>(await response.Content.ReadAsStringAsync());
                 }
                 else
                 {
@@ -259,7 +267,7 @@ namespace AUVSI_SUAS_TargetUpload
             ODLC odlcObject = null;
             try
             {
-                HttpResponseMessage response = gHttpClient.GetAsync("/api/odlcs/" + id.ToString()).Result;
+                HttpResponseMessage response = gHttpClient.GetAsync(Properties.Settings.Default.url + "/api/odlcs/" + id.ToString()).Result;
                 if (response.StatusCode == HttpStatusCode.OK)
                 {
                     odlcObject = JsonConvert.DeserializeObject<ODLC>(response.Content.ReadAsStringAsync().Result);
@@ -282,7 +290,7 @@ namespace AUVSI_SUAS_TargetUpload
         private void AddImage_Click(object sender, RoutedEventArgs e)
         {
             OpenFileDialog openFileDialog = new OpenFileDialog();
-            if(openFileDialog.ShowDialog() == true)
+            if (openFileDialog.ShowDialog() == true)
             {
                 //We create new bitmaps for each, because we don't want to thumbnail to be modified when we change the target image. 
                 ((ODLC)Listbox_ODLC.SelectedItem).TargetImage = new Bitmap(openFileDialog.FileName);
@@ -310,12 +318,16 @@ namespace AUVSI_SUAS_TargetUpload
         private void AddTarget_Click(object sender, RoutedEventArgs e)
         {
             odlcList.Add(new ODLC());
+            if(odlcList.Count == 1)
+            {
+                Listbox_ODLC.SelectedIndex = 0;
+            }
         }
 
         private void DeleteTarget_Click(object sender, RoutedEventArgs e)
         {
-            MessageBoxResult result =  MessageBox.Show("Are you sure you want to delete this target?\r\nThis cannot be undone.", "Confirm Delete", MessageBoxButton.YesNo);
-            if(result == MessageBoxResult.Yes)
+            MessageBoxResult result = MessageBox.Show("Are you sure you want to delete this target?\r\nThis cannot be undone.", "Confirm Delete", MessageBoxButton.YesNo);
+            if (result == MessageBoxResult.Yes)
             {
                 try
                 {
@@ -323,7 +335,61 @@ namespace AUVSI_SUAS_TargetUpload
                 }
                 catch
                 {
+                    throw new NotImplementedException();
+                }
+            }
+        }
 
+        private async void Connect_Click(object sender, RoutedEventArgs e)
+        {
+            await Dispatcher.BeginInvoke(new Action(delegate
+            {
+                StatusLabel.Content = "Connecting to Server...";
+            }));
+
+            bool result = await Login();
+            
+            if (result)
+            {
+                await Dispatcher.BeginInvoke(new Action(delegate
+                {
+                    StatusLabel.Content = "Connected";
+                }));
+              
+            }
+            else
+            {
+                await Dispatcher.BeginInvoke(new Action(delegate
+                {
+                    StatusLabel.Content = "Connection Failed";
+                }));
+            }
+        }
+
+        /// <summary>
+        /// Uploads all changes to the server and updates the UI with the response, such as ID or other things. 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private async void Sync_Click(object sender, RoutedEventArgs e)
+        {
+            int numTargets = odlcList.Count();
+
+            List<ODLC> temp = await getOLDC();
+
+            ODLC returnedObject;
+            for (int i = 0; i < numTargets; i++)
+            {
+                if(odlcList[i].ID == null)
+                {
+                    string test = odlcList[i].getJson();
+                    returnedObject = await postODLC(odlcList[i]);
+                    odlcList[i] = returnedObject;
+                }
+                else
+                {
+                    returnedObject = await updateODLC(odlcList[i]);
+                    odlcList[i] = returnedObject;
                 }
             }
         }
@@ -332,6 +398,7 @@ namespace AUVSI_SUAS_TargetUpload
     /// <summary>
     /// Class that holds the OLDC object. 
     /// </summary>
+    [JsonObject(MemberSerialization.OptIn)]
     public class ODLC : INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler PropertyChanged;
@@ -342,7 +409,7 @@ namespace AUVSI_SUAS_TargetUpload
         }
 
         //We cannot send an id when uploading a new object. We only set ID when updating the object. 
-        [JsonProperty("mission", NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty("id", NullValueHandling = NullValueHandling.Ignore)]
         private int? id;
 
         public int? ID { get; }
@@ -726,8 +793,6 @@ namespace AUVSI_SUAS_TargetUpload
         }
     }
 
-   
-
     public class EnumToStringConverter : IValueConverter
     {
 
@@ -758,14 +823,12 @@ namespace AUVSI_SUAS_TargetUpload
         {
             try
             {
-                if((ODLC.ODLCType)value == ODLC.ODLCType.STANDARD)
+                if ((ODLC.ODLCType)value == ODLC.ODLCType.STANDARD)
                 {
-                    return true;
+                    return Visibility.Visible;
                 }
-                else
-                {
-                    return false;
-                }
+
+                return Visibility.Collapsed;
             }
             catch
             {
@@ -790,12 +853,39 @@ namespace AUVSI_SUAS_TargetUpload
             {
                 if ((ODLC.ODLCType)value == ODLC.ODLCType.STANDARD)
                 {
+                    return Visibility.Collapsed;
+                }
+
+                return Visibility.Visible;
+
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+
+    }
+
+    //Converter used to enable controls when an item has been selected in the ListBox.
+    public class ObjectSelectedToEnabledConverter : IValueConverter
+    {
+
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            try
+            {
+                if((int)value == -1)
+                {
                     return false;
                 }
-                else
-                {
-                    return true;
-                }
+                return true;
+
             }
             catch
             {
