@@ -356,6 +356,15 @@ namespace AUVSI_SUAS_TargetUpload
         /// <param name="e"></param>
         private async void Sync_Click(object sender, RoutedEventArgs e)
         {
+            if (!gLoggedIn)
+            {
+                await Dispatcher.BeginInvoke(new Action(delegate
+                {
+                    StatusLabel.Content = "Please connect to server first!";
+                }));
+                return;
+            }
+
             int numTargets = odlcList.Count();
 
             List<ODLC> temp = await getOLDC();
@@ -363,7 +372,12 @@ namespace AUVSI_SUAS_TargetUpload
             ODLC returnedObject;
             for (int i = 0; i < numTargets; i++)
             {
-                if(odlcList[i].ID == null)
+                await Dispatcher.BeginInvoke(new Action(delegate
+                {
+                    StatusLabel.Content = String.Format("Syncing Target {0} of {1}", i, numTargets);
+                }));
+
+                if (odlcList[i].ID == null)
                 {
                     string test = odlcList[i].getJson();
                     returnedObject = await postODLC(odlcList[i]);
@@ -375,6 +389,17 @@ namespace AUVSI_SUAS_TargetUpload
                     odlcList[i] = returnedObject;
                 }
             }
+            
+            if(odlcList.Count > 0)
+            {
+                Listbox_ODLC.SelectedIndex = 0;
+            }
+            
+            await Dispatcher.BeginInvoke(new Action(delegate
+            {
+                StatusLabel.Content = "Sync Complete";
+            }));
+
         }
     }
 
@@ -395,7 +420,12 @@ namespace AUVSI_SUAS_TargetUpload
         [JsonProperty("id", NullValueHandling = NullValueHandling.Ignore)]
         private int? id;
 
-        public int? ID { get; }
+        public int? ID
+        {
+            get {
+                return id;
+            }
+        }
 
         [JsonProperty("mission")]
         private int mission;
