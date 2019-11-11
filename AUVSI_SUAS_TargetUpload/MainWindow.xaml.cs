@@ -24,6 +24,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using Microsoft.Win32;
 using System.Globalization;
+using System.Drawing.Imaging;
 
 namespace AUVSI_SUAS_TargetUpload
 {
@@ -157,12 +158,16 @@ namespace AUVSI_SUAS_TargetUpload
                 if (response.StatusCode == HttpStatusCode.OK)
                 {
                     odlcResponse = JsonConvert.DeserializeObject<ODLC>(await response.Content.ReadAsStringAsync());
+                    
                 }
                 else
                 {
                     //Response code was not "ok"
                     MessageBox.Show("Error: " + response.StatusCode.ToString(), "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return null;
                 }
+
+                await postImage(odlcObject, (int)odlcResponse.ID);
             }
             catch (Exception Ex)
             {
@@ -175,7 +180,7 @@ namespace AUVSI_SUAS_TargetUpload
 
 
         /// <summary>
-        /// Updates the uploaded ODLC object on the server. Returns the updated object. 
+        /// Updates the uploaded ODLC object and image on the server. Returns the updated object. 
         /// </summary>
         /// <param name="odlcObject"></param>
         /// <returns></returns>
@@ -205,7 +210,10 @@ namespace AUVSI_SUAS_TargetUpload
                 {
                     //Response code was not "ok"
                     MessageBox.Show("Error: " + response.StatusCode.ToString(), "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return null;
                 }
+
+                await postImage(odlcObject, (int)odlcObject.ID);
             }
             catch (Exception Ex)
             {
@@ -216,9 +224,45 @@ namespace AUVSI_SUAS_TargetUpload
             return odlcResponse;
         }
 
-        //Delete Function 
-        //Not mentioned in the interop program specs, but it does work. 
-        //gHttpClient.DeleteAsync("/api/odlcs" + id.ToString())
+        private async Task<bool> postImage(ODLC odlcObject, int id)
+        {
+            try
+            {
+                //convert filestream to byte array
+                MemoryStream stream = new MemoryStream();
+                odlcObject.ThumbnailImage.Save(stream, ImageFormat.Jpeg);
+
+                byte[] fileBytes;
+                fileBytes = stream.ToArray();
+                stream.Close();
+
+                //load the image byte[] into a System.Net.Http.ByteArrayContent
+                ByteArrayContent imageBinaryContent = new ByteArrayContent(fileBytes);
+
+                //create a System.Net.Http.MultiPartFormDataContent
+                ByteArrayContent content2 = new ByteArrayContent(fileBytes);
+                content2.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("image/jpeg");
+
+                //make the POST request using the URI enpoint and the MultiPartFormDataContent
+                HttpResponseMessage response = await gHttpClient.PostAsync(Properties.Settings.Default.url + "/api/odlcs/" + id + "/image", content2);
+                if (response.StatusCode == HttpStatusCode.OK)
+                {
+                    string result = await response.Content.ReadAsStringAsync();
+                    return true;
+                }
+                else
+                {
+                    //Response code was not "ok"
+                    MessageBox.Show("Error: " + response.StatusCode.ToString(), "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return false;
+                }
+            }
+            catch(Exception ex)
+            {
+                return false;
+            }
+           
+        }
 
         private async Task<bool> deleteODLC(int id)
         {
