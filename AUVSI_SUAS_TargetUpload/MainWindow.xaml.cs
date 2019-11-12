@@ -453,7 +453,28 @@ namespace AUVSI_SUAS_TargetUpload
             {
                 await Dispatcher.BeginInvoke(new Action(delegate
                 {
-                    StatusLabel.Content = "Connected";
+                    StatusLabel.Content = "Connected. Downloading Server Targets...";
+                }));
+
+
+                //Sync with the server, and get all uploaded targets, in case we accidentally closed the program, or are working on two different computers. 
+                List<ODLC> uploadedODLCs = await getOLDC();
+
+                foreach (ODLC i in uploadedODLCs)
+                {
+                    Bitmap uploadedImage = await getImage((int)i.ID);
+                    if (uploadedImage != null)
+                    {
+                        i.TargetImage = uploadedImage;
+                        i.ThumbnailImage = uploadedImage;
+                    }
+                }
+                syncODLC(uploadedODLCs);
+
+
+                await Dispatcher.BeginInvoke(new Action(delegate
+                {
+                    StatusLabel.Content = "Connected. Server Target Download Complete.";
                 }));
 
             }
@@ -465,19 +486,7 @@ namespace AUVSI_SUAS_TargetUpload
                 }));
             }
 
-            //Sync with the server, and get all uploaded targets, in case we accidentally closed the program, or are working on two different computers. 
-            List<ODLC> uploadedODLCs = await getOLDC();
-            
-            foreach (ODLC i in uploadedODLCs)
-            {
-                Bitmap uploadedImage = await getImage((int)i.ID);
-                if(uploadedImage != null)
-                {
-                    i.TargetImage = uploadedImage;
-                    i.ThumbnailImage = uploadedImage;
-                }
-            }
-            syncODLC(uploadedODLCs);
+           
 
         }
 
