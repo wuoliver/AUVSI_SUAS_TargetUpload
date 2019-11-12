@@ -167,7 +167,7 @@ namespace AUVSI_SUAS_TargetUpload
                     return null;
                 }
 
-                await postImage(odlcObject, (int)odlcResponse.ID);
+                //await postImage(odlcObject, (int)odlcResponse.ID);
             }
             catch (Exception Ex)
             {
@@ -213,7 +213,7 @@ namespace AUVSI_SUAS_TargetUpload
                     return null;
                 }
 
-                await postImage(odlcObject, (int)odlcObject.ID);
+                //await postImage(odlcObject, (int)odlcObject.ID);
             }
             catch (Exception Ex)
             {
@@ -224,10 +224,16 @@ namespace AUVSI_SUAS_TargetUpload
             return odlcResponse;
         }
 
-        private async Task<bool> postImage(ODLC odlcObject, int id)
+        private async Task<bool> postImage(ODLC odlcObject)
         {
             try
             {
+                int? id = odlcObject.ID;
+                if (id == null)
+                {
+                    return false;
+                }
+                
                 //convert filestream to byte array
                 MemoryStream stream = new MemoryStream();
                 odlcObject.ThumbnailImage.Save(stream, ImageFormat.Jpeg);
@@ -262,6 +268,24 @@ namespace AUVSI_SUAS_TargetUpload
                 return false;
             }
            
+        }
+
+        private async Task<Bitmap> getImage(int id)
+        {
+            //make the POST request using the URI enpoint and the MultiPartFormDataContent
+            HttpResponseMessage response = await gHttpClient.GetAsync(Properties.Settings.Default.url + "/api/odlcs/" + id + "/image");
+            if (response.StatusCode == HttpStatusCode.OK)
+            {
+                byte[] result = await response.Content.ReadAsByteArrayAsync();
+                Bitmap image = new Bitmap(new MemoryStream(result));
+                return image;
+            }
+            else
+            {
+                //Response code was not "ok"
+                //MessageBox.Show("Error: " + response.StatusCode.ToString(), "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return null;
+            }
         }
 
         private async Task<bool> deleteODLC(int id)
@@ -443,6 +467,16 @@ namespace AUVSI_SUAS_TargetUpload
 
             //Sync with the server, and get all uploaded targets, in case we accidentally closed the program, or are working on two different computers. 
             List<ODLC> uploadedODLCs = await getOLDC();
+            
+            foreach (ODLC i in uploadedODLCs)
+            {
+                Bitmap uploadedImage = await getImage((int)i.ID);
+                if(uploadedImage != null)
+                {
+                    i.TargetImage = uploadedImage;
+                    i.ThumbnailImage = uploadedImage;
+                }
+            }
             syncODLC(uploadedODLCs);
 
         }
@@ -523,6 +557,7 @@ namespace AUVSI_SUAS_TargetUpload
                     {
                         odlcList[i].CopyObjectSettingsFromServer(returnedObject);
                     }
+                    await postImage(odlcList[i]);
                 }
                 else
                 {
@@ -531,6 +566,7 @@ namespace AUVSI_SUAS_TargetUpload
                     {
                         odlcList[i].CopyObjectSettingsFromServer(returnedObject);
                     }
+                    await postImage(odlcList[i]);
                 }
             }
 
