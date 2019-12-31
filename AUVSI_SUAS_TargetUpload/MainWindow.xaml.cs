@@ -138,7 +138,9 @@ namespace AUVSI_SUAS_TargetUpload
         /// Uploads a new ODLC object to the server. Returns the uploaded object. 
         /// </summary>
         /// <param name="odlcObject"></param>
-        /// <returns></returns>
+        /// <returns>
+        /// Null if invalid call. The ODLC object being uploaded with any updated fields, or error codes. 
+        /// </returns>
         private async Task<ODLC> postODLC(ODLC odlcObject)
         {
             if (!gLoggedIn)
@@ -158,7 +160,7 @@ namespace AUVSI_SUAS_TargetUpload
                 if (response.StatusCode == HttpStatusCode.OK)
                 {
                     odlcResponse = JsonConvert.DeserializeObject<ODLC>(await response.Content.ReadAsStringAsync());
-                    
+                    odlcResponse.ServerResponse = response.ReasonPhrase;
                 }
                 else
                 {
@@ -183,7 +185,9 @@ namespace AUVSI_SUAS_TargetUpload
         /// Updates the uploaded ODLC object and image on the server. Returns the updated object. 
         /// </summary>
         /// <param name="odlcObject"></param>
-        /// <returns></returns>
+        /// <returns>
+        /// Null if invalid call. The ODLC object being uploaded with any updated fields, or error codes. 
+        /// </returns>
         private async Task<ODLC> updateODLC(ODLC odlcObject)
         {
             if (!gLoggedIn)
@@ -205,6 +209,7 @@ namespace AUVSI_SUAS_TargetUpload
                 {
                     string temp = await response.Content.ReadAsStringAsync();
                     odlcResponse = JsonConvert.DeserializeObject<ODLC>(await response.Content.ReadAsStringAsync());
+                    odlcResponse.ServerResponse = response.ReasonPhrase;
                 }
                 else
                 {
@@ -220,10 +225,17 @@ namespace AUVSI_SUAS_TargetUpload
                 //Log something
                 return null;
             }
-
             return odlcResponse;
         }
 
+
+        /// <summary>
+        /// Posts the image for the sepcific ODLC object. We get the target ID from the object itself. 
+        /// </summary>
+        /// <param name="odlcObject"></param>
+        /// <returns>
+        /// True if post succeeded, False if post failed. 
+        /// </returns>
         private async Task<bool> postImage(ODLC odlcObject)
         {
             try
@@ -272,22 +284,30 @@ namespace AUVSI_SUAS_TargetUpload
 
         private async Task<Bitmap> getImage(int id)
         {
-            //make the POST request using the URI enpoint and the MultiPartFormDataContent
-            HttpResponseMessage response = await gHttpClient.GetAsync(Properties.Settings.Default.url + "/api/odlcs/" + id + "/image");
-            if (response.StatusCode == HttpStatusCode.OK)
+            try
             {
-                byte[] result = await response.Content.ReadAsByteArrayAsync();
-                Bitmap image = new Bitmap(new MemoryStream(result));
-                return image;
+                //make the POST request using the URI enpoint and the MultiPartFormDataContent
+                HttpResponseMessage response = await gHttpClient.GetAsync(Properties.Settings.Default.url + "/api/odlcs/" + id + "/image");
+                if (response.StatusCode == HttpStatusCode.OK)
+                {
+                    byte[] result = await response.Content.ReadAsByteArrayAsync();
+                    Bitmap image = new Bitmap(new MemoryStream(result));
+                    return image;
+                }
+                else
+                {
+                    //Response code was not "ok"
+                    //MessageBox.Show("Error: " + response.StatusCode.ToString(), "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return null;
+                }
             }
-            else
+            catch
             {
-                //Response code was not "ok"
-                //MessageBox.Show("Error: " + response.StatusCode.ToString(), "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 return null;
             }
         }
 
+        //Deletes the ODLC object given a ID. Returns true if the object has been deleted. False if unable to delete. 
         private async Task<bool> deleteODLC(int id)
         {
             if (!gLoggedIn)
@@ -353,7 +373,7 @@ namespace AUVSI_SUAS_TargetUpload
         /// Gets a single ODLC object uploaded from the server. Returns NULL if id is invalid. 
         /// </summary>
         /// <returns>
-        /// A single ODLC object with the given id. Returns NULL if id is invalid. 
+        /// A single ODLC object with the given id. Null if ID is invalid. 
         /// </returns>
         private ODLC getOLDC(int id)
         {
@@ -386,13 +406,21 @@ namespace AUVSI_SUAS_TargetUpload
 
         private void AddImage_Click(object sender, RoutedEventArgs e)
         {
-            OpenFileDialog openFileDialog = new OpenFileDialog();
-            if (openFileDialog.ShowDialog() == true)
+            try
             {
-                //We create new bitmaps for each, because we don't want to thumbnail to be modified when we change the target image. 
-                ((ODLC)Listbox_ODLC.SelectedItem).TargetImage = new Bitmap(openFileDialog.FileName);
-                ((ODLC)Listbox_ODLC.SelectedItem).ThumbnailImage = new Bitmap(openFileDialog.FileName);
+                OpenFileDialog openFileDialog = new OpenFileDialog();
+                if (openFileDialog.ShowDialog() == true)
+                {
+                    //We create new bitmaps for each, because we don't want to thumbnail to be modified when we change the target image. 
+                    ((ODLC)Listbox_ODLC.SelectedItem).TargetImage = new Bitmap(openFileDialog.FileName);
+                    ((ODLC)Listbox_ODLC.SelectedItem).ThumbnailImage = new Bitmap(openFileDialog.FileName);
+                }
             }
+            catch(Exception Ex)
+            {
+                MessageBox.Show("Error: " + Ex.ToString(), "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            
         }
 
         private void AddTarget_Click(object sender, RoutedEventArgs e)
@@ -531,6 +559,8 @@ namespace AUVSI_SUAS_TargetUpload
                 return;
             }
 
+            bool syncError = false;
+
             int numTargets = odlcList.Count();
 
             //Sync local copy with server. 
@@ -556,27 +586,34 @@ namespace AUVSI_SUAS_TargetUpload
                         numTargets--;
                         i--;
                     }
+                    else
+                    {
+                        syncError = true;
+                    }
                     continue;
                 }
 
+                //If no ID is assigned, we haven't uploaded the target yet. 
                 if (odlcList[i].ID == null)
                 {
                     returnedObject = await postODLC(odlcList[i]);
-                    if(returnedObject!= null)
-                    {
-                        odlcList[i].CopyObjectSettingsFromServer(returnedObject);
-                    }
-                    await postImage(odlcList[i]);
                 }
+                //Target has already been uploaded. Use the updateODLC function instead. 
                 else
                 {
                     returnedObject = await updateODLC(odlcList[i]);
-                    if (returnedObject != null)
-                    {
-                        odlcList[i].CopyObjectSettingsFromServer(returnedObject);
-                    }
-                    await postImage(odlcList[i]);
                 }
+
+                if (returnedObject != null)
+                {
+                    odlcList[i].CopyObjectSettingsFromServer(returnedObject);
+                }
+                else
+                {
+                    odlcList[i].SyncStatus = ODLC.ODLCSyncStatus.ERROR;
+                    syncError = true;
+                }
+                bool imageStatus = await postImage(odlcList[i]);
             }
 
             if (odlcList.Count > 0)
@@ -584,10 +621,22 @@ namespace AUVSI_SUAS_TargetUpload
                 Listbox_ODLC.SelectedIndex = 0;
             }
 
-            await Dispatcher.BeginInvoke(new Action(delegate
+
+            if (syncError)
             {
-                StatusLabel.Content = "Sync Complete";
-            }));
+                await Dispatcher.BeginInvoke(new Action(delegate
+                {
+                    StatusLabel.Content = "Error syncing one or more targets";
+                }));
+            }
+            else
+            {
+                await Dispatcher.BeginInvoke(new Action(delegate
+                {
+                    StatusLabel.Content = "Sync Complete";
+                }));
+            }
+            
         }
     }
 
@@ -866,6 +915,23 @@ namespace AUVSI_SUAS_TargetUpload
             }
         }
 
+        private string serverResponse;
+        public string ServerResponse
+        {
+            get
+            {
+                return serverResponse;
+            }
+            set
+            {
+                if (value != serverResponse)
+                {
+                    serverResponse = value;
+                    NotifyPropertyChanged();
+                }
+            }
+        }
+
         private Bitmap targetImage;
 
         public Bitmap TargetImage
@@ -962,6 +1028,7 @@ namespace AUVSI_SUAS_TargetUpload
             description = "";
             autonomous = false;
             syncStatus = ODLCSyncStatus.UNSYNCED;
+            serverResponse = "";
             thumbnailImage = new Bitmap(Properties.Resources.PlaceholderImage);
             targetImage = new Bitmap(Properties.Resources.PlaceholderImage);
         }
@@ -985,6 +1052,7 @@ namespace AUVSI_SUAS_TargetUpload
             Description = odlcObject.description;
             Autonomous = false;
             SyncStatus = ODLCSyncStatus.SYNCED;
+            ServerResponse = odlcObject.serverResponse;
         }
 
         public string getJson()
@@ -1051,7 +1119,9 @@ namespace AUVSI_SUAS_TargetUpload
             DELETE,     //Object marked for deletion on the server 
             SYNCED,     //Object synced to the server
             UNSYNCED,   //Object not synced on the server 
-            MODIFIED    //Object synced, and has since been modified. 
+            MODIFIED,   //Object synced, and has since been modified. 
+            ERROR       //Object not accepted by the server. If this error occurs,
+                        //we need to explain why it was not accepted. Unfortunatly, the server response is usually: Bad Request
         }
     }
 
